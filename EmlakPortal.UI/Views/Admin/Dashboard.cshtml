@@ -1,0 +1,21 @@
+﻿@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    ViewData["Title"] = "Dashboard";
+}
+<div class="row">
+    <div class="col-md-3 mb-3"><div class="card text-white bg-primary"><div class="card-body"><h5 id="totalEstates">—</h5><small>Toplam İlan</small></div></div></div>
+    <div class="col-md-3 mb-3"><div class="card text-white bg-success"><div class="card-body"><h5 id="activeEstates">—</h5><small>Aktif İlan</small></div></div></div>
+    <div class="col-md-3 mb-3"><div class="card text-white bg-info"><div class="card-body"><h5 id="totalUsers">—</h5><small>Kullanıcı</small></div></div></div>
+    <div class="col-md-3 mb-3"><div class="card text-white bg-warning"><div class="card-body"><h5 id="totalCategories">—</h5><small>Kategori</small></div></div></div>
+</div>
+
+@section Scripts {
+    <script>
+        $(function() {
+            var token = localStorage.getItem("token");
+            $.ajax({ url: "https://localhost:7279/api/Estate", success: function(d) { $("#totalEstates").text(d.length); $("#activeEstates").text(d.filter(e=>e.isActive).length); } });
+            $.ajax({ url: "https://localhost:7279/api/Auth/Users", headers: {"Authorization":"Bearer "+token}, success: function(d) { $("#totalUsers").text(d.length); } });
+            $.ajax({ url: "https://localhost:7279/api/Category", success: function(d) { $("#totalCategories").text(d.length); } });
+        });
+    </script>
+}

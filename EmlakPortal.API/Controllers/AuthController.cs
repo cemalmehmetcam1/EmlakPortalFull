@@ -114,10 +114,14 @@ namespace EmlakPortal.API.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetUsers()
         {
-            var users = await _userManager.Users
-                .Select(u => new { u.Id, u.UserName, u.FullName, u.Email })
-                .ToListAsync();
-            return Ok(users);
+            var users = await _userManager.Users.ToListAsync();
+            var userList = new List<object>();
+            foreach (var u in users)
+            {
+                var roles = await _userManager.GetRolesAsync(u);
+                userList.Add(new { u.Id, u.UserName, u.FullName, u.Email, Roles = roles });
+            }
+            return Ok(userList);
         }
     }
 }

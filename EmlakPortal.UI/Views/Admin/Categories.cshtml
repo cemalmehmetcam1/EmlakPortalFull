@@ -1,0 +1,57 @@
+﻿@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    ViewData["Title"] = "Kategori Yönetimi";
+}
+<div class="row">
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header">Yeni Kategori Ekle</div>
+            <div class="card-body">
+                <input id="txtCategoryName" class="form-control mb-2" placeholder="Kategori adı" />
+                <button id="btnAddCategory" class="btn btn-primary">Ekle</button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-7">
+        <table class="table table-bordered" id="tblCategories">
+            <thead><tr><th>ID</th><th>Ad</th><th>Durum</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var token = localStorage.getItem("token");
+        function getHeaders() { return { "Authorization": "Bearer " + token }; }
+
+        function loadCategories() {
+            $.ajax({ url: "https://localhost:7279/api/Category", success: function(d){
+                var rows = "";
+                $.each(d, function(i,c) {
+                    rows += `<tr><td>${c.id}</td><td>${c.name}</td><td><span class="badge bg-success">Aktif</span></td></tr>`;
+                });
+                $("#tblCategories tbody").html(rows);
+            }});
+        }
+
+        $(function(){
+            loadCategories();
+            $("#btnAddCategory").click(function(){
+                var name = $("#txtCategoryName").val().trim();
+                if (!name) return alert("Kategori adı girin.");
+                $.ajax({
+                    url: "https://localhost:7279/api/Category",
+                    type: "POST",
+                    contentType: "application/json",
+                    headers: getHeaders(),
+                    data: JSON.stringify({ Name: name }),
+                    success: function(res) {
+                        if (res.status) { $("#txtCategoryName").val(""); loadCategories(); }
+                        else alert(res.message);
+                    }
+                });
+            });
+        });
+    </script>
+}

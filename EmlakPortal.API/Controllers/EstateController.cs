@@ -25,21 +25,26 @@ namespace EmlakPortal.API.Controllers
         public async Task<IActionResult> GetEstates()
         {
             var estates = await _estateRepo.AsQueryable()
-                .Include(e => e.Category) // Kategorisini dahil et
-                .Include(e => e.AppUser) // Ekleyen emlakçıyı dahil et
+                .Include(e => e.Category)
+                .Include(e => e.AppUser)
                 .Where(e => e.IsActive)
                 .Select(e => new EstateDto
                 {
                     Id = e.Id,
                     Title = e.Title,
+                    Description = e.Description,   // eklendi
                     Price = e.Price,
                     RoomCount = e.RoomCount,
                     SquareMeters = e.SquareMeters,
                     City = e.City,
+                    Address = e.Address,           // eklendi
                     StatusName = e.Status == EstateStatus.Satilik ? "Satılık" : "Kiralık",
+                    CategoryId = e.CategoryId,     // eklendi
                     CategoryName = e.Category!.Name,
                     AddedBy = e.AppUser!.FullName,
-                    CreatedDate = e.CreatedDate
+                    IsActive = e.IsActive,         // eklendi
+                    CreatedDate = e.CreatedDate,
+                    ImageUrl = e.ImageUrl
                 }).ToListAsync();
 
             return Ok(estates);
@@ -61,14 +66,19 @@ namespace EmlakPortal.API.Controllers
             {
                 Id = estate.Id,
                 Title = estate.Title,
+                Description = estate.Description,
                 Price = estate.Price,
                 RoomCount = estate.RoomCount,
                 SquareMeters = estate.SquareMeters,
                 City = estate.City,
+                Address = estate.Address,
                 StatusName = estate.Status == EstateStatus.Satilik ? "Satılık" : "Kiralık",
+                CategoryId = estate.CategoryId,
                 CategoryName = estate.Category!.Name,
                 AddedBy = estate.AppUser!.FullName,
-                CreatedDate = estate.CreatedDate
+                IsActive = estate.IsActive,
+                CreatedDate = estate.CreatedDate,
+                ImageUrl = estate.ImageUrl
             };
 
             return Ok(estateDto);
@@ -249,5 +259,6 @@ namespace EmlakPortal.API.Controllers
 
             return Ok(new ResultDto { Status = true, Message = "Vitrin fotoğrafı başarıyla yüklendi.", Data = estate.ImageUrl });
         }
+
     }
 }

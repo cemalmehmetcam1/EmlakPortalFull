@@ -29,7 +29,7 @@
                     $.each(data, function (i, item) {
                         html += `<div class="col-md-4 mb-4">
                             <div class="card h-100">
-                                <img src="${item.imageUrl || '/images/default.jpg'}" class="card-img-top" style="height:200px; object-fit:cover" />
+                                <img src="${item.imageUrl ? 'https://localhost:7279' + item.imageUrl : 'https://localhost:7279/images/default.jpg'}" class="card-img-top" style="height:200px; object-fit:cover" />
                                 <div class="card-body">
                                     <h5 class="card-title">${item.title}</h5>
                                     <p>${item.price.toLocaleString('tr-TR')} TL</p>

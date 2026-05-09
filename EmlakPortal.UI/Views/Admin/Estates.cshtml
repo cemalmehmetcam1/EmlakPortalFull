@@ -1,21 +1,60 @@
 ﻿@{
     Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    ViewData["Title"] = "İlan Yönetimi";
 }
 <div class="container-fluid">
-    <button class="btn btn-success mb-3" id="btnAddNew">Yeni İlan Ekle</button>
-    <table class="table table-bordered" id="tblEstates">
-        <thead><tr><th>Başlık</th><th>Fiyat</th><th>Şehir</th><th>İşlem</th></tr></thead>
-        <tbody></tbody>
-    </table>
+    <button class="btn btn-success mb-3" id="btnAddNew"><i class="fas fa-plus me-1"></i> Yeni İlan Ekle</button>
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover" id="tblEstates">
+            <thead class="table-light">
+                <tr><th>Başlık</th><th>Fiyat</th><th>Şehir</th><th>Durum</th><th style="width:180px;">İşlem</th></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
 </div>
 
 <!-- Modal: Ekle/Düzenle -->
 <div class="modal fade" id="estateModal" tabindex="-1">
-    <!-- Modal içeriği (form) burada AJAX ile doldurulacak -->
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalTitle">Yeni İlan Ekle</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="hdnEstateId" value="0" />
+                <div class="row g-2">
+                    <div class="col-md-6 mb-2"><label>Başlık</label><input id="txtTitle" class="form-control" /></div>
+                    <div class="col-md-3 mb-2"><label>Fiyat (₺)</label><input id="txtPrice" type="number" class="form-control" /></div>
+                    <div class="col-md-3 mb-2"><label>Oda Sayısı</label><input id="txtRoomCount" type="number" class="form-control" /></div>
+                    <div class="col-md-3 mb-2"><label>m²</label><input id="txtSquareMeters" type="number" class="form-control" /></div>
+                    <div class="col-md-3 mb-2"><label>Şehir</label><input id="txtCity" class="form-control" /></div>
+                    <div class="col-md-6 mb-2"><label>Adres</label><input id="txtAddress" class="form-control" /></div>
+                    <div class="col-md-3 mb-2"><label>Durum</label><select id="cmbStatus" class="form-control"><option value="1">Satılık</option><option value="2">Kiralık</option></select></div>
+                    <div class="col-md-3 mb-2"><label>Kategori</label><select id="cmbCategory" class="form-control"></select></div>
+                    <div class="col-md-12 mb-2"><label>Açıklama</label><textarea id="txtDescription" class="form-control" rows="2"></textarea></div>
+                    <div class="col-md-6 mb-2"><label>Aktif</label><select id="cmbIsActive" class="form-control"><option value="true">Evet</option><option value="false">Hayır</option></select></div>
+                    <div class="col-md-6 mb-2">
+                        <label>Fotoğraf</label>
+                        <input type="file" id="fileImage" class="form-control" />
+                        <input type="hidden" id="hdnImageUrl" />
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" id="btnSave">Kaydet</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 @section Scripts {
     <script>
+        var token = localStorage.getItem("token");
+        function getHeaders() { return { "Authorization": "Bearer " + token }; }
+
         function loadEstates() {
             $.ajax({
                 url: "https://localhost:7279/api/Estate",
@@ -24,11 +63,12 @@
                     $.each(data, function (i, item) {
                         rows += `<tr>
                             <td>${item.title}</td>
-                            <td>${item.price} TL</td>
+                            <td>${item.price.toLocaleString('tr-TR')} ₺</td>
                             <td>${item.city}</td>
+                            <td><span class="badge ${item.isActive ? 'bg-success' : 'bg-secondary'}">${item.isActive ? 'Aktif' : 'Pasif'}</span></td>
                             <td>
-                                <button class="btn btn-sm btn-warning btnEdit" data-id="${item.id}">Düzenle</button>
-                                <button class="btn btn-sm btn-danger btnDelete" data-id="${item.id}">Sil</button>
+                                <button class="btn btn-sm btn-warning btnEdit" data-id="${item.id}"><i class="fas fa-pen"></i></button>
+                                <button class="btn btn-sm btn-danger btnDelete" data-id="${item.id}"><i class="fas fa-trash"></i></button>
                             </td>
                         </tr>`;
                     });
@@ -37,9 +77,107 @@
             });
         }
 
+        function loadCategories() {
+            $.ajax({ url: "https://localhost:7279/api/Category", success: function(d) {
+                var opts = "";
+                $.each(d, function(i,c) { opts += `<option value="${c.id}">${c.name}</option>`; });
+                $("#cmbCategory").html(opts);
+            }});
+        }
+
         $(function () {
             loadEstates();
-            // Silme, düzenleme, ekleme işlemleri için ayrı fonksiyonlar yazılacak
+            loadCategories();
+
+            $("#btnAddNew").click(function(){
+                $("#modalTitle").text("Yeni İlan Ekle");
+                $("#hdnEstateId").val("0");
+                $("#frmEstate")[0]?.reset(); // form yok, manuel reset
+                $("#txtTitle, #txtPrice, #txtRoomCount, #txtSquareMeters, #txtCity, #txtAddress, #txtDescription").val("");
+                $("#cmbStatus").val("1"); $("#cmbIsActive").val("true");
+                $("#fileImage").val(""); $("#hdnImageUrl").val("");
+                $("#estateModal").modal("show");
+            });
+
+            // Kaydet
+            $("#btnSave").click(function(){
+                var id = parseInt($("#hdnEstateId").val());
+                var isNew = id === 0;
+                var url = isNew ? "https://localhost:7279/api/Estate" : "https://localhost:7279/api/Estate";
+                var type = isNew ? "POST" : "PUT";
+
+                var payload = {
+                    Title: $("#txtTitle").val(),
+                    Price: parseFloat($("#txtPrice").val()),
+                    RoomCount: parseInt($("#txtRoomCount").val()),
+                    SquareMeters: parseInt($("#txtSquareMeters").val()),
+                    City: $("#txtCity").val(),
+                    Address: $("#txtAddress").val(),
+                    Status: parseInt($("#cmbStatus").val()),
+                    CategoryId: parseInt($("#cmbCategory").val()),
+                    Description: $("#txtDescription").val(),
+                    IsActive: $("#cmbIsActive").val() === "true"
+                };
+                if (!isNew) payload.Id = id;
+
+                $.ajax({
+                    url: url, type: type, contentType: "application/json",
+                    headers: getHeaders(),
+                    data: JSON.stringify(payload),
+                    success: function(res) {
+                        if (res.status || res.Status) {
+                            if (!isNew && $("#fileImage")[0].files[0]) {
+                                var formData = new FormData();
+                                formData.append("file", $("#fileImage")[0].files[0]);
+                                $.ajax({
+                                    url: `https://localhost:7279/api/Estate/${id}/ImageUpload`,
+                                    type: "POST", headers: getHeaders(), processData: false, contentType: false,
+                                    data: formData,
+                                    success: function(){ loadEstates(); }
+                                });
+                            }
+                            $("#estateModal").modal("hide");
+                            loadEstates();
+                        } else alert(res.message || res.Message);
+                    }
+                });
+            });
+
+            // Düzenle
+        // Düzenle butonu
+        $(document).on("click", ".btnEdit", function(){
+            var id = $(this).data("id");
+            $.ajax({
+                url: "https://localhost:7279/api/Estate/" + id,
+                success: function(item) {
+                    $("#hdnEstateId").val(item.id);
+                    $("#txtTitle").val(item.title);
+                    $("#txtPrice").val(item.price);
+                    $("#txtRoomCount").val(item.roomCount);
+                    $("#txtSquareMeters").val(item.squareMeters);
+                    $("#txtCity").val(item.city);
+                    $("#txtAddress").val(item.address);                 // artık var
+                    $("#cmbStatus").val(item.statusName === "Satılık" ? "1" : "2");
+                    $("#cmbCategory").val(item.categoryId);             // artık var
+                    $("#txtDescription").val(item.description || "");   // artık var
+                    $("#cmbIsActive").val(item.isActive ? "true" : "false");
+                    $("#hdnImageUrl").val(item.imageUrl || "");
+                    $("#modalTitle").text("İlan Düzenle");
+                    $("#estateModal").modal("show");
+                }
+            });
+        });
+
+            // Sil (soft delete)
+            $(document).on("click", ".btnDelete", function(){
+                if (!confirm("Bu ilanı silmek istediğinize emin misiniz?")) return;
+                var id = $(this).data("id");
+                $.ajax({
+                    url: "https://localhost:7279/api/Estate/" + id,
+                    type: "DELETE", headers: getHeaders(),
+                    success: function() { loadEstates(); }
+                });
+            });
         });
     </script>
 }
