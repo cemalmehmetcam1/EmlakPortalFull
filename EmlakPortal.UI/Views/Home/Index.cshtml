@@ -1,0 +1,63 @@
+﻿@{
+    Layout = "~/Views/Shared/_LayoutPublic.cshtml";
+}
+<div class="container">
+    <!-- Filtreler -->
+    <div class="row mb-4">
+        <div class="col-md-3"><input id="txtCity" class="form-control" placeholder="Şehir" /></div>
+        <div class="col-md-2"><input id="txtMinPrice" class="form-control" placeholder="Min Fiyat" type="number" /></div>
+        <div class="col-md-2"><input id="txtMaxPrice" class="form-control" placeholder="Max Fiyat" type="number" /></div>
+        <div class="col-md-2">
+            <select id="cmbStatus" class="form-control"><option value="">Tümü</option><option value="1">Satılık</option><option value="2">Kiralık</option></select>
+        </div>
+        <div class="col-md-1"><button id="btnFilter" class="btn btn-primary">Filtrele</button></div>
+    </div>
+    <div id="estateList" class="row"></div>
+</div>
+
+@section Scripts {
+    <script>
+        function loadEstates(filters = {}) {
+            $.ajax({
+                url: "https://localhost:7279/api/Estate/Filter",
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify(filters),
+                success: function (data) {
+                    var html = "";
+                    if (data.length === 0) html = '<div class="col-12 text-center">İlan bulunamadı.</div>';
+                    $.each(data, function (i, item) {
+                        html += `<div class="col-md-4 mb-4">
+                            <div class="card h-100">
+                                <img src="${item.imageUrl || '/images/default.jpg'}" class="card-img-top" style="height:200px; object-fit:cover" />
+                                <div class="card-body">
+                                    <h5 class="card-title">${item.title}</h5>
+                                    <p>${item.price.toLocaleString('tr-TR')} TL</p>
+                                    <p>${item.roomCount} Oda - ${item.squareMeters} m²</p>
+                                    <p>${item.statusName}</p>
+                                    <a href="/Home/Detail/${item.id}" class="btn btn-primary">Detay</a>
+                                </div>
+                            </div>
+                        </div>`;
+                    });
+                    $("#estateList").html(html);
+                }
+            });
+        }
+
+        $(function () {
+            loadEstates(); // İlk yüklemede boş filtre
+
+            $("#btnFilter").click(function () {
+                var filter = {
+                    City: $("#txtCity").val() || null,
+                    MinPrice: $("#txtMinPrice").val() ? parseFloat($("#txtMinPrice").val()) : null,
+                    MaxPrice: $("#txtMaxPrice").val() ? parseFloat($("#txtMaxPrice").val()) : null,
+                    Status: $("#cmbStatus").val() ? parseInt($("#cmbStatus").val()) : null,
+                    RoomCount: null
+                };
+                loadEstates(filter);
+            });
+        });
+    </script>
+}

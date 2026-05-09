@@ -1,0 +1,45 @@
+﻿@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+<div class="container-fluid">
+    <button class="btn btn-success mb-3" id="btnAddNew">Yeni İlan Ekle</button>
+    <table class="table table-bordered" id="tblEstates">
+        <thead><tr><th>Başlık</th><th>Fiyat</th><th>Şehir</th><th>İşlem</th></tr></thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<!-- Modal: Ekle/Düzenle -->
+<div class="modal fade" id="estateModal" tabindex="-1">
+    <!-- Modal içeriği (form) burada AJAX ile doldurulacak -->
+</div>
+
+@section Scripts {
+    <script>
+        function loadEstates() {
+            $.ajax({
+                url: "https://localhost:7279/api/Estate",
+                success: function (data) {
+                    var rows = "";
+                    $.each(data, function (i, item) {
+                        rows += `<tr>
+                            <td>${item.title}</td>
+                            <td>${item.price} TL</td>
+                            <td>${item.city}</td>
+                            <td>
+                                <button class="btn btn-sm btn-warning btnEdit" data-id="${item.id}">Düzenle</button>
+                                <button class="btn btn-sm btn-danger btnDelete" data-id="${item.id}">Sil</button>
+                            </td>
+                        </tr>`;
+                    });
+                    $("#tblEstates tbody").html(rows);
+                }
+            });
+        }
+
+        $(function () {
+            loadEstates();
+            // Silme, düzenleme, ekleme işlemleri için ayrı fonksiyonlar yazılacak
+        });
+    </script>
+}
