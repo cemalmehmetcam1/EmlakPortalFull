@@ -40,12 +40,10 @@
         <div class="container">
             <a class="navbar-brand" href="/"><i class="fas fa-building me-2"></i>Emlak Portalı</a>
             <div class="navbar-nav ms-auto" id="navAuthLinks">
-                <!-- Misafir kullanıcı için varsayılan linkler (JS ile güncellenecek) -->
+                <!-- Misafir kullanıcı için varsayılan linkler (JavaScript ile değişecek) -->
                 <a class="nav-link" href="/Home/Index"><i class="fas fa-search me-1"></i>İlan Ara</a>
                 <a class="nav-link" href="/Auth/Login"><i class="fas fa-sign-in-alt me-1"></i>Giriş</a>
                 <a class="nav-link" href="/Auth/Register"><i class="fas fa-user-plus me-1"></i>Kayıt</a>
-                linksHtml += '<a class="nav-link" href="/Home/Profile"><i class="fas fa-user me-1"></i>Profil</a>';
-                linksHtml += '<a class="nav-link" href="#" id="btnPublicLogout"><i class="fas fa-sign-out-alt me-1"></i>Çıkış</a>';
             </div>
         </div>
     </nav>
@@ -80,12 +78,14 @@
                         var role = payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
                         var isAdmin = (role === "Admin");
 
+                        // 🔼 Profil linki burada ekleniyor
                         var linksHtml = '<a class="nav-link" href="/Home/Index"><i class="fas fa-search me-1"></i>İlan Ara</a>';
                         if (isAdmin) {
                             linksHtml += '<a class="nav-link" href="/Admin/Dashboard"><i class="fas fa-tachometer-alt me-1"></i>Yönetim</a>';
                         }
-                        linksHtml += '<span class="nav-link text-white">Merhaba, ' + userName + '</span>' +
-                            '<a class="nav-link" href="#" id="btnPublicLogout"><i class="fas fa-sign-out-alt me-1"></i>Çıkış</a>';
+                        linksHtml += '<a class="nav-link" href="/Home/Profile"><i class="fas fa-user me-1"></i>Profil</a>';
+                        linksHtml += '<span class="nav-link text-white">Merhaba, ' + userName + '</span>';
+                        linksHtml += '<a class="nav-link" href="#" id="btnPublicLogout"><i class="fas fa-sign-out-alt me-1"></i>Çıkış</a>';
 
                         linksContainer.html(linksHtml);
 
@@ -98,7 +98,7 @@
                     }
                 } catch (e) { }
             }
-            // Token yoksa zaten varsayılan linkler (Giriş / Kayıt) görünür, ek işlem gerekmez.
+            // Token yoksa varsayılan misafir linkleri kalır, ek işlem gerekmez.
         });
     </script>
     @RenderSection("Scripts", required: false)

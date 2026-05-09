@@ -17,5 +17,6 @@
         public bool IsActive { get; set; }                // eklenen
         public DateTime CreatedDate { get; set; }
         public string? ImageUrl { get; set; }
+        public List<string>? ImageUrls { get; set; }
     }
 }

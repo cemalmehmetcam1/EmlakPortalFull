@@ -21,6 +21,8 @@ namespace EmlakPortal.API.Models
         public string AppUserId { get; set; } = string.Empty; // İlanı ekleyen kullanıcı (Admin/Emlakçı)
         public AppUser? AppUser { get; set; }
 
+        public ICollection<EstateImage> Images { get; set; } = new List<EstateImage>();
+
         public string? ImageUrl { get; set; } // Vitrin fotoğrafının yolu
     }
 }

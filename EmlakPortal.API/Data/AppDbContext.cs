@@ -9,7 +9,7 @@ namespace EmlakPortal.API.Data
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
         }
-
+        public DbSet<EstateImage> EstateImages { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<Estate> Estates { get; set; }
 
@@ -28,6 +28,13 @@ namespace EmlakPortal.API.Data
             builder.Entity<Estate>()
                 .Property(e => e.Price)
                 .HasColumnType("decimal(18,2)");
+
+            builder.Entity<EstateImage>()
+    .HasOne(ei => ei.Estate)
+    .WithMany(e => e.Images)
+    .HasForeignKey(ei => ei.EstateId)
+    .OnDelete(DeleteBehavior.Cascade);
         }
+
     }
 }

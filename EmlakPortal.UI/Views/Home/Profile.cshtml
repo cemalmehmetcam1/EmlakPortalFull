@@ -63,7 +63,9 @@
                     $("#txtEmail").val(user.email);
                 }
             },
-            error: function() { if(xhr.status === 401) window.location.href = "/Auth/Login"; }
+                    error: function(xhr) {
+            if (xhr.status === 401) window.location.href = "/Auth/Login";
+        }
         });
 
         // Güncelle
