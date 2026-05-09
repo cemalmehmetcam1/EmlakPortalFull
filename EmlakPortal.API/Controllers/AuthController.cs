@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace EmlakPortal.API.Controllers
 {
@@ -122,6 +123,70 @@ namespace EmlakPortal.API.Controllers
                 userList.Add(new { u.Id, u.UserName, u.FullName, u.Email, Roles = roles });
             }
             return Ok(userList);
+        }
+        [HttpPost("ForgotPassword")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto model)
+        {
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user == null)
+                return Ok(new ResultDto { Status = true, Message = "Eğer sistemde kayıtlıysa, şifre sıfırlama bağlantısı e-posta adresinize gönderilmiştir." });
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            // Demo: token döndürülüyor
+            return Ok(new ResultDto { Status = true, Message = "Şifre sıfırlama bağlantısı gönderildi. (Token: " + token + ")" });
+        }
+        // KULLANICI PROFİLİNİ GETİR
+        [Authorize]
+        [HttpGet("GetProfile")]
+        public async Task<IActionResult> GetProfile()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return NotFound(new ResultDto { Status = false, Message = "Kullanıcı bulunamadı." });
+
+            var roles = await _userManager.GetRolesAsync(user);
+            var profile = new
+            {
+                user.UserName,
+                user.FullName,
+                user.Email,
+                Role = roles.FirstOrDefault() ?? "User"
+            };
+
+            return Ok(new ResultDto { Status = true, Data = profile });
+        }
+
+        // KULLANICI PROFİLİNİ GÜNCELLE
+        [Authorize]
+        [HttpPut("UpdateProfile")]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto model)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return NotFound(new ResultDto { Status = false, Message = "Kullanıcı bulunamadı." });
+
+            user.FullName = model.FullName;
+            user.Email = model.Email;
+
+            // Şifre güncelleme (opsiyonel)
+            if (!string.IsNullOrEmpty(model.CurrentPassword) && !string.IsNullOrEmpty(model.NewPassword))
+            {
+                var passwordCheck = await _userManager.CheckPasswordAsync(user, model.CurrentPassword);
+                if (!passwordCheck)
+                    return BadRequest(new ResultDto { Status = false, Message = "Mevcut şifre yanlış." });
+
+                var passwordResult = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+                if (!passwordResult.Succeeded)
+                    return BadRequest(new ResultDto { Status = false, Message = string.Join(" ", passwordResult.Errors.Select(e => e.Description)) });
+            }
+
+            var result = await _userManager.UpdateAsync(user);
+            if (result.Succeeded)
+                return Ok(new ResultDto { Status = true, Message = "Profil başarıyla güncellendi." });
+
+            return BadRequest(new ResultDto { Status = false, Message = "Profil güncellenirken bir hata oluştu." });
         }
     }
 }
