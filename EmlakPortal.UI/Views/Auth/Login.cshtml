@@ -29,40 +29,53 @@
 
 @section Scripts {
     <script>
+        function parseJwt(token) {
+            var base64Url = token.split('.')[1];
+            var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            return JSON.parse(decodeURIComponent(window.atob(base64).split('').map(function (c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join('')));
+        }
+
         $("#btnLogin").click(function () {
-            var btn = $(this).prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i>');
+            var btn = $(this).prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> Giriş Yapılıyor...');
+
             $.ajax({
                 url: "https://localhost:7279/api/Auth/Login",
                 type: "POST",
                 contentType: "application/json",
                 data: JSON.stringify({
-                    UserName: $("#txtUserName").val(),
+                    UserName: $("#txtUserName").val().trim(),
                     Password: $("#txtPassword").val()
                 }),
                 success: function (res) {
-                    if (res.status) {
-                        localStorage.setItem("token", res.data);
-                        // Rol kontrolü yapıp yönlendir
-                        var payload = parseJwt(res.data);
+                    if (res.status === true || res.Status === true) {
+                        // Token'ı al
+                        var token = res.data || res.Data;
+                        localStorage.setItem("token", token);
+
+                        // Rol bul
+                        var payload = parseJwt(token);
                         var role = payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
-                        if (role === "Admin") window.location.href = "/Admin/Dashboard";
-                        else window.location.href = "/Home/Index";
+
+                        if (role === "Admin") {
+                            window.location.href = "/Admin/Dashboard";
+                        } else {
+                            window.location.href = "/Home/Index";
+                        }
                     } else {
-                        $("#divResult").html('<div class="alert alert-danger">'+ res.message +'</div>');
-                        btn.prop("disabled", false).text("Giriş Yap");
+                        $("#divResult").html('<div class="alert alert-danger">' + (res.message || res.Message) + '</div>');
+                        btn.prop("disabled", false).html('Giriş Yap');
                     }
                 },
-                error: function () {
-                    $("#divResult").html('<div class="alert alert-danger">Sunucu hatası!</div>');
-                    btn.prop("disabled", false).text("Giriş Yap");
+                error: function (xhr) {
+                    var msg = "Sunucuya ulaşılamadı.";
+                    if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                    else if (xhr.responseJSON && xhr.responseJSON.Message) msg = xhr.responseJSON.Message;
+                    $("#divResult").html('<div class="alert alert-danger">' + msg + '</div>');
+                    btn.prop("disabled", false).html('Giriş Yap');
                 }
             });
         });
-
-        function parseJwt(token) {
-            var base64Url = token.split('.')[1];
-            var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            return JSON.parse(decodeURIComponent(window.atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')));
-        }
     </script>
 }

@@ -6,12 +6,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Content Remove="Views\Admin\Estates.cshtml" />
-  </ItemGroup>
 
-  <ItemGroup>
-    <None Include="Views\Admin\Estates.cshtml" />
-  </ItemGroup>
 
 </Project>

@@ -92,18 +92,17 @@
             $("#btnAddNew").click(function(){
                 $("#modalTitle").text("Yeni İlan Ekle");
                 $("#hdnEstateId").val("0");
-                $("#frmEstate")[0]?.reset(); // form yok, manuel reset
                 $("#txtTitle, #txtPrice, #txtRoomCount, #txtSquareMeters, #txtCity, #txtAddress, #txtDescription").val("");
                 $("#cmbStatus").val("1"); $("#cmbIsActive").val("true");
                 $("#fileImage").val(""); $("#hdnImageUrl").val("");
                 $("#estateModal").modal("show");
             });
 
-            // Kaydet
+            // Kaydet (YENİ / GÜNCELLE)
             $("#btnSave").click(function(){
                 var id = parseInt($("#hdnEstateId").val());
                 var isNew = id === 0;
-                var url = isNew ? "https://localhost:7279/api/Estate" : "https://localhost:7279/api/Estate";
+                var url = "https://localhost:7279/api/Estate";
                 var type = isNew ? "POST" : "PUT";
 
                 var payload = {
@@ -126,47 +125,62 @@
                     data: JSON.stringify(payload),
                     success: function(res) {
                         if (res.status || res.Status) {
-                            if (!isNew && $("#fileImage")[0].files[0]) {
-                                var formData = new FormData();
-                                formData.append("file", $("#fileImage")[0].files[0]);
-                                $.ajax({
-                                    url: `https://localhost:7279/api/Estate/${id}/ImageUpload`,
-                                    type: "POST", headers: getHeaders(), processData: false, contentType: false,
-                                    data: formData,
-                                    success: function(){ loadEstates(); }
-                                });
+                            // Kaydetme başarılı olunca, eğer dosya seçiliyse resmi yükle
+                            if (res.id || res.data) {
+                                var newId = res.data || res.id || id;
+                                if ($("#fileImage")[0].files[0]) {
+                                    var formData = new FormData();
+                                    formData.append("file", $("#fileImage")[0].files[0]);
+                                    $.ajax({
+                                        url: "https://localhost:7279/api/Estate/" + newId + "/ImageUpload",
+                                        type: "POST",
+                                        headers: getHeaders(),
+                                        processData: false,
+                                        contentType: false,
+                                        data: formData,
+                                        success: function () { loadEstates(); },
+                                        error: function () { loadEstates(); }
+                                    });
+                                } else {
+                                    loadEstates();
+                                }
+                            } else {
+                                loadEstates();
                             }
                             $("#estateModal").modal("hide");
-                            loadEstates();
-                        } else alert(res.message || res.Message);
+                        } else {
+                            alert(res.message || res.Message);
+                        }
+                    },
+                    error: function() {
+                        alert("Kaydetme sırasında bir hata oluştu.");
                     }
                 });
             });
 
-            // Düzenle
-        // Düzenle butonu
-        $(document).on("click", ".btnEdit", function(){
-            var id = $(this).data("id");
-            $.ajax({
-                url: "https://localhost:7279/api/Estate/" + id,
-                success: function(item) {
-                    $("#hdnEstateId").val(item.id);
-                    $("#txtTitle").val(item.title);
-                    $("#txtPrice").val(item.price);
-                    $("#txtRoomCount").val(item.roomCount);
-                    $("#txtSquareMeters").val(item.squareMeters);
-                    $("#txtCity").val(item.city);
-                    $("#txtAddress").val(item.address);                 // artık var
-                    $("#cmbStatus").val(item.statusName === "Satılık" ? "1" : "2");
-                    $("#cmbCategory").val(item.categoryId);             // artık var
-                    $("#txtDescription").val(item.description || "");   // artık var
-                    $("#cmbIsActive").val(item.isActive ? "true" : "false");
-                    $("#hdnImageUrl").val(item.imageUrl || "");
-                    $("#modalTitle").text("İlan Düzenle");
-                    $("#estateModal").modal("show");
-                }
+            // Düzenle butonu
+            $(document).on("click", ".btnEdit", function(){
+                var id = $(this).data("id");
+                $.ajax({
+                    url: "https://localhost:7279/api/Estate/" + id,
+                    success: function(item) {
+                        $("#hdnEstateId").val(item.id);
+                        $("#txtTitle").val(item.title);
+                        $("#txtPrice").val(item.price);
+                        $("#txtRoomCount").val(item.roomCount);
+                        $("#txtSquareMeters").val(item.squareMeters);
+                        $("#txtCity").val(item.city);
+                        $("#txtAddress").val(item.address);
+                        $("#cmbStatus").val(item.statusName === "Satılık" ? "1" : "2");
+                        $("#cmbCategory").val(item.categoryId);
+                        $("#txtDescription").val(item.description || "");
+                        $("#cmbIsActive").val(item.isActive ? "true" : "false");
+                        $("#hdnImageUrl").val(item.imageUrl || "");
+                        $("#modalTitle").text("İlan Düzenle");
+                        $("#estateModal").modal("show");
+                    }
+                });
             });
-        });
 
             // Sil (soft delete)
             $(document).on("click", ".btnDelete", function(){
