@@ -4,7 +4,14 @@
 }
 <table class="table table-bordered" id="tblUsers">
     <thead class="table-light">
-        <tr><th>Kullanıcı Adı</th><th>Ad Soyad</th><th>E-posta</th><th>Yetki</th><th style="width:100px;">İşlem</th></tr>
+        <tr>
+            <th>Kullanıcı Adı</th>
+            <th>Ad Soyad</th>
+            <th>E-posta</th>
+            <th>İlan Sayısı</th>   <!-- 🆕 Yeni sütun -->
+            <th>Yetki</th>
+            <th style="width:100px;">İşlem</th>
+        </tr>
     </thead>
     <tbody></tbody>
 </table>
@@ -23,7 +30,10 @@
                     $.each(users, function(i, u) {
                         var isAdmin = u.roles && u.roles.includes("Admin");
                         rows += `<tr>
-                            <td>${u.userName}</td><td>${u.fullName}</td><td>${u.email}</td>
+                            <td>${u.userName}</td>
+                            <td>${u.fullName}</td>
+                            <td>${u.email}</td>
+                            <td><span class="badge bg-secondary">${u.estateCount}</span></td>
                             <td><span class="badge ${isAdmin ? 'bg-danger' : 'bg-secondary'}">${isAdmin ? 'Admin' : 'User'}</span></td>
                             <td>
                                 ${isAdmin
@@ -42,14 +52,20 @@
             $(document).on("click", ".btnRole", function(){
                 var userName = $(this).data("user");
                 var action = $(this).data("role");
-                var url = action === "make" ? "https://localhost:7279/api/Auth/MakeAdmin?userName=" + userName
-                           : "https://localhost:7279/api/Auth/RevokeAdmin?userName=" + userName;
+                var url = action === "make"
+                    ? "https://localhost:7279/api/Auth/MakeAdmin?userName=" + userName
+                    : "https://localhost:7279/api/Auth/RevokeAdmin?userName=" + userName;
                 $.ajax({
                     url: url,
                     type: "POST",
                     headers: getHeaders(),
-                    success: function(res) { alert(res.message); loadUsers(); },
-                    error: function() { alert("İşlem başarısız."); }
+                    success: function(res) {
+                        alert(res.message);
+                        loadUsers();
+                    },
+                    error: function() {
+                        alert("İşlem başarısız.");
+                    }
                 });
             });
         });

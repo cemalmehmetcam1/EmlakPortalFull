@@ -8,5 +8,9 @@ namespace EmlakPortal.UI.Controllers
         public IActionResult Estates() => View();
         public IActionResult Categories() => View();
         public IActionResult Users() => View();
+        public IActionResult Profile()
+        {
+            return View();
+        }
     }
 }

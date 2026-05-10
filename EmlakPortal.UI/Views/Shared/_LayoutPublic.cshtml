@@ -39,16 +39,69 @@
     <nav class="navbar navbar-expand-lg navbar-custom">
         <div class="container">
             <a class="navbar-brand" href="/"><i class="fas fa-building me-2"></i>Emlak Portalı</a>
-            <div class="navbar-nav ms-auto" id="navAuthLinks">
-                <!-- Misafir kullanıcı için varsayılan linkler (JavaScript ile değişecek) -->
-                <a class="nav-link" href="/Home/Index"><i class="fas fa-search me-1"></i>İlan Ara</a>
-                <a class="nav-link" href="/Auth/Login"><i class="fas fa-sign-in-alt me-1"></i>Giriş</a>
-                <a class="nav-link" href="/Auth/Register"><i class="fas fa-user-plus me-1"></i>Kayıt</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <div class="navbar-nav ms-auto" id="navAuthLinks">
+                    <!-- Misafir kullanıcı için varsayılan linkler (JavaScript ile değişecek) -->
+                    <a class="nav-link" href="/Home/Index"><i class="fas fa-search me-1"></i>İlan Ara</a>
+                    <a class="nav-link" href="/Auth/Login"><i class="fas fa-sign-in-alt me-1"></i>Giriş</a>
+                    <a class="nav-link" href="/Auth/Register"><i class="fas fa-user-plus me-1"></i>Kayıt</a>
+                </div>
             </div>
         </div>
     </nav>
     <div class="container mt-4">
         @RenderBody()
+    </div>
+
+    <!-- Ortak Modal: İlan Ekleme / Düzenleme (Kullanıcı) -->
+    <div class="modal fade" id="publicEstateModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">Yeni İlan Ekle</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="hdnPublicEstateId" value="0" />
+                    <div class="row g-2">
+                        <div class="col-md-6 mb-2"><label>Başlık</label><input id="txtPublicTitle" class="form-control" /></div>
+                        <div class="col-md-3 mb-2"><label>Fiyat (₺)</label><input id="txtPublicPrice" type="number" class="form-control" /></div>
+                        <div class="col-md-3 mb-2"><label>Oda Sayısı</label><input id="txtPublicRoomCount" type="number" class="form-control" /></div>
+                        <div class="col-md-3 mb-2"><label>m²</label><input id="txtPublicSquareMeters" type="number" class="form-control" /></div>
+                        <div class="col-md-3 mb-2">
+                            <label>Şehir</label>
+                            <select id="cmbPublicCity" class="form-control">
+                                <option value="">Seçiniz</option>
+                                <option value="Adana">Adana</option>
+                                <!-- diğer şehir seçenekleri aynen -->
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-2"><label>Adres</label><input id="txtPublicAddress" class="form-control" /></div>
+                        <div class="col-md-3 mb-2"><label>Durum</label><select id="cmbPublicStatus" class="form-control"><option value="1">Satılık</option><option value="2">Kiralık</option></select></div>
+                        <div class="col-md-3 mb-2"><label>Kategori</label><select id="cmbPublicCategory" class="form-control"></select></div>
+                        <div class="col-md-12 mb-2"><label>Açıklama</label><textarea id="txtPublicDescription" class="form-control" rows="2"></textarea></div>
+                        <div class="col-md-6 mb-2"><label>Aktif</label><select id="cmbPublicIsActive" class="form-control"><option value="true">Evet</option><option value="false">Hayır</option></select></div>
+                        <div class="col-md-6 mb-2">
+                            <label>Vitrin Fotoğrafı</label>
+                            <input type="file" id="filePublicImage" class="form-control" accept="image/*" />
+                            <div class="mt-2"><img id="imgPublicPreview" src="" style="max-height:100px; display:none;" class="rounded shadow-sm" /></div>
+                        </div>
+                        <div class="col-md-12 mb-2">
+                            <label>Galeri Fotoğrafları (isteğe bağlı)</label>
+                            <input type="file" id="filePublicImages" class="form-control" accept="image/*" multiple />
+                            <div class="mt-2" id="galleryPublicPreview" style="display:flex; flex-wrap:wrap; gap:5px;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="button" class="btn btn-primary" id="btnSavePublic">Kaydet</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -66,6 +119,37 @@
             }
         }
 
+        // Yardımcı fonksiyonlar (tüm sayfalarda kullanılabilir)
+        function getHeaders() {
+            var token = localStorage.getItem("token");
+            return token ? { "Authorization": "Bearer " + token } : {};
+        }
+
+        function loadPublicCategories(callback) {
+            $.ajax({
+                url: "https://localhost:7279/api/Category",
+                success: function (d) {
+                    var opts = "";
+                    $.each(d, function (i, c) { opts += `<option value="${c.id}">${c.name}</option>`; });
+                    $("#cmbPublicCategory").html(opts);
+                    if (callback) callback();
+                }
+            });
+        }
+
+        function resetPublicForm() {
+            $("#hdnPublicEstateId").val("0");
+            $("#txtPublicTitle, #txtPublicPrice, #txtPublicRoomCount, #txtPublicSquareMeters, #txtPublicAddress, #txtPublicDescription").val("");
+            $("#cmbPublicCity").val("");
+            $("#cmbPublicStatus").val("1");
+            $("#cmbPublicIsActive").val("true");
+            $("#filePublicImage").val("");
+            $("#imgPublicPreview").hide();
+            $("#filePublicImages").val("");
+            $("#galleryPublicPreview").empty();
+            $("#publicEstateModal .modal-title").text("Yeni İlan Ekle");
+        }
+
         $(function () {
             var token = localStorage.getItem("token");
             var linksContainer = $("#navAuthLinks");
@@ -78,18 +162,30 @@
                         var role = payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
                         var isAdmin = (role === "Admin");
 
-                        // 🔼 Profil linki burada ekleniyor
                         var linksHtml = '<a class="nav-link" href="/Home/Index"><i class="fas fa-search me-1"></i>İlan Ara</a>';
                         if (isAdmin) {
                             linksHtml += '<a class="nav-link" href="/Admin/Dashboard"><i class="fas fa-tachometer-alt me-1"></i>Yönetim</a>';
                         }
+                        // Kullanıcıya özel linkler
+                        linksHtml += '<a class="nav-link" href="/Home/Favorites"><i class="fas fa-heart me-1"></i>Favorilerim</a>';
+                        linksHtml += '<a class="nav-link" href="/Home/MyEstates"><i class="fas fa-list me-1"></i>İlanlarım</a>';
                         linksHtml += '<a class="nav-link" href="/Home/Profile"><i class="fas fa-user me-1"></i>Profil</a>';
+                        // İlan Ver butonu (isteğe bağlı, daha önce eklenmişti, burada kalabilir)
+                        linksHtml += '<a class="nav-link" href="#" id="btnAddEstatePublic"><i class="fas fa-plus-circle me-1"></i>İlan Ver</a>';
                         linksHtml += '<span class="nav-link text-white">Merhaba, ' + userName + '</span>';
                         linksHtml += '<a class="nav-link" href="#" id="btnPublicLogout"><i class="fas fa-sign-out-alt me-1"></i>Çıkış</a>';
 
                         linksContainer.html(linksHtml);
 
-                        // Çıkış butonu tıklama olayı
+                        // İlan Ver butonuna tıklama (modalı açar)
+                        $(document).on("click", "#btnAddEstatePublic", function (e) {
+                            e.preventDefault();
+                            resetPublicForm();
+                            loadPublicCategories();
+                            $("#publicEstateModal").modal("show");
+                        });
+
+                        // Çıkış butonu
                         $(document).on("click", "#btnPublicLogout", function (e) {
                             e.preventDefault();
                             localStorage.removeItem("token");
@@ -98,8 +194,117 @@
                     }
                 } catch (e) { }
             }
-            // Token yoksa varsayılan misafir linkleri kalır, ek işlem gerekmez.
+            // Token yoksa varsayılan misafir linkleri kalır.
+
+            // Vitrin fotoğrafı önizleme (layout'ta olduğu için tüm sayfalarda çalışır)
+            $(document).on("change", "#filePublicImage", function () {
+                var file = this.files[0];
+                if (file) {
+                    var reader = new FileReader();
+                    reader.onload = function (e) { $("#imgPublicPreview").attr("src", e.target.result).show(); };
+                    reader.readAsDataURL(file);
+                } else {
+                    $("#imgPublicPreview").hide();
+                }
+            });
+
+            // Galeri fotoğrafları önizleme
+            $(document).on("change", "#filePublicImages", function () {
+                var files = this.files;
+                $("#galleryPublicPreview").empty();
+                for (var i = 0; i < files.length; i++) {
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        $("#galleryPublicPreview").append('<img src="' + e.target.result + '" style="height:60px; margin:2px;" class="rounded shadow-sm" />');
+                    };
+                    reader.readAsDataURL(files[i]);
+                }
+            });
+
+            // Kaydet butonu (ekleme / güncelleme)
+            $(document).on("click", "#btnSavePublic", function () {
+                var id = parseInt($("#hdnPublicEstateId").val());
+                var isNew = id === 0;
+                var url = "https://localhost:7279/api/Estate";
+                var type = isNew ? "POST" : "PUT";
+
+                var payload = {
+                    Title: $("#txtPublicTitle").val(),
+                    Price: parseFloat($("#txtPublicPrice").val()),
+                    RoomCount: parseInt($("#txtPublicRoomCount").val()),
+                    SquareMeters: parseInt($("#txtPublicSquareMeters").val()),
+                    City: $("#cmbPublicCity").val(),
+                    Address: $("#txtPublicAddress").val(),
+                    Status: parseInt($("#cmbPublicStatus").val()),
+                    CategoryId: parseInt($("#cmbPublicCategory").val()),
+                    Description: $("#txtPublicDescription").val(),
+                    IsActive: $("#cmbPublicIsActive").val() === "true"
+                };
+                if (!isNew) payload.Id = id;
+
+                $.ajax({
+                    url: url,
+                    type: type,
+                    contentType: "application/json",
+                    headers: getHeaders(),
+                    data: JSON.stringify(payload),
+                    success: function (res) {
+                        if (res.status) {
+                            alert("İlan başarıyla " + (isNew ? "eklendi." : "güncellendi."));
+                            $("#publicEstateModal").modal("hide");
+                            resetPublicForm();
+
+                            // Sayfayı akıllıca yenile
+                            var path = window.location.pathname.toLowerCase();
+                            if (path.includes("myestates")) {
+                                location.reload();
+                            } else if (path.includes("index") || path === "/" || path === "/home/index") {
+                                // Eğer ana sayfada loadEstates fonksiyonu varsa çağır, yoksa reload
+                                if (typeof loadEstates === "function") {
+                                    loadEstates();
+                                } else {
+                                    location.reload();
+                                }
+                            } else {
+                                location.reload();
+                            }
+                        } else {
+                            alert(res.message || res.Message);
+                        }
+                    },
+                    error: function () {
+                        alert("Sunucu hatası.");
+                    }
+                });
+            });
         });
+                // Galeri fotoğrafı silme (düzenleme modunda)
+        $(document).on("click", ".btn-delete-gallery-image", function(e){
+            e.preventDefault();
+            var imageId = $(this).data("imageid");
+            var container = $(this).closest("div.position-relative");
+
+            if (!confirm("Bu fotoğrafı silmek istediğinize emin misiniz?")) return;
+
+            $.ajax({
+                url: "https://localhost:7279/api/Estate/Image/" + imageId,
+                type: "DELETE",
+                headers: getHeaders(),
+                success: function(res) {
+                    if (res.status || res.Status) {
+                        container.remove();
+                        alert("Fotoğraf silindi.");
+                    } else {
+                        alert(res.message || res.Message || "Silme başarısız.");
+                    }
+                },
+                error: function() {
+                    alert("Silme sırasında hata oluştu.");
+                }
+            });
+        });
+
+
     </script>
     @RenderSection("Scripts", required: false)
 </body>

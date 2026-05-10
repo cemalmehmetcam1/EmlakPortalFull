@@ -12,7 +12,7 @@ namespace EmlakPortal.API.Data
         public DbSet<EstateImage> EstateImages { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<Estate> Estates { get; set; }
-
+        public DbSet<Favorite> Favorites { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -34,6 +34,19 @@ namespace EmlakPortal.API.Data
     .WithMany(e => e.Images)
     .HasForeignKey(ei => ei.EstateId)
     .OnDelete(DeleteBehavior.Cascade);
+            builder.Entity<Favorite>()
+    .HasOne(f => f.User)
+    .WithMany(u => u.Favorites)
+    .HasForeignKey(f => f.UserId)
+    .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Favorite>()
+                .HasOne(f => f.Estate)
+                .WithMany()  // Estate'in Favorites koleksiyonu yoksa WithMany()
+                .HasForeignKey(f => f.EstateId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+
         }
 
     }

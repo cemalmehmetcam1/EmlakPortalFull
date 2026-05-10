@@ -35,7 +35,7 @@ namespace EmlakPortal.API.Controllers
             var estates = await _estateRepo.AsQueryable()
                 .Include(e => e.Category)
                 .Include(e => e.AppUser)
-                .Include(e => e.Images)   // galeri için eklendi
+                .Include(e => e.Images)
                 .Where(e => e.IsActive)
                 .Select(e => new EstateDto
                 {
@@ -54,7 +54,11 @@ namespace EmlakPortal.API.Controllers
                     IsActive = e.IsActive,
                     CreatedDate = e.CreatedDate,
                     ImageUrl = e.ImageUrl,
-                    ImageUrls = e.Images.Select(i => i.ImageUrl).ToList()   // galeri URL'leri
+                    ImageIds = e.Images.Select(i => i.Id).ToList(),
+                    ImageUrls = e.Images.Select(i => i.ImageUrl).ToList(),
+                    SellerFullName = e.AppUser!.FullName,
+                    SellerPhone = e.AppUser.PhoneNumber,
+                    SellerEmail = e.AppUser.Email
                 }).ToListAsync();
 
             return Ok(estates);
@@ -67,7 +71,7 @@ namespace EmlakPortal.API.Controllers
             var estate = await _estateRepo.AsQueryable()
                 .Include(e => e.Category)
                 .Include(e => e.AppUser)
-                .Include(e => e.Images)   // galeri için eklendi
+                .Include(e => e.Images)
                 .FirstOrDefaultAsync(e => e.Id == id && e.IsActive);
 
             if (estate == null)
@@ -90,14 +94,18 @@ namespace EmlakPortal.API.Controllers
                 IsActive = estate.IsActive,
                 CreatedDate = estate.CreatedDate,
                 ImageUrl = estate.ImageUrl,
-                ImageUrls = estate.Images.Select(i => i.ImageUrl).ToList()   // galeri URL'leri
+                ImageUrls = estate.Images.Select(i => i.ImageUrl).ToList(),
+                ImageIds = estate.Images.Select(i => i.Id).ToList(),
+                SellerFullName = estate.AppUser!.FullName,
+                SellerPhone = estate.AppUser.PhoneNumber,
+                SellerEmail = estate.AppUser.Email
             };
 
             return Ok(estateDto);
         }
 
         // YÖNETİCİ PANELİ: Yeni İlan Ekleme (Sadece Admin yetkililer yapabilir)
-        [Authorize(Roles = "Admin")]
+        
         [HttpPost]
         public async Task<IActionResult> AddEstate(EstateCreateDto model)
         {
@@ -126,12 +134,20 @@ namespace EmlakPortal.API.Controllers
         }
 
         // YÖNETİCİ PANELİ: İlan Silme (Soft Delete)
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteEstate(int id)
         {
             var estate = await _estateRepo.GetByIdAsync(id);
-            if (estate == null) return NotFound(new ResultDto { Status = false, Message = "İlan bulunamadı." });
+            if (estate == null)
+                return NotFound(new ResultDto { Status = false, Message = "İlan bulunamadı." });
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var isAdmin = User.IsInRole("Admin");
+
+            // Sadece ilan sahibi veya Admin silebilir
+            if (estate.AppUserId != userId && !isAdmin)
+                return Forbid();
 
             estate.IsActive = false;
             _estateRepo.Update(estate);
@@ -141,12 +157,20 @@ namespace EmlakPortal.API.Controllers
         }
 
         // YÖNETİCİ PANELİ: İlan Güncelleme
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         [HttpPut]
         public async Task<IActionResult> UpdateEstate(EstateUpdateDto model)
         {
             var estate = await _estateRepo.GetByIdAsync(model.Id);
-            if (estate == null) return NotFound(new ResultDto { Status = false, Message = "İlan bulunamadı." });
+            if (estate == null)
+                return NotFound(new ResultDto { Status = false, Message = "İlan bulunamadı." });
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var isAdmin = User.IsInRole("Admin");
+
+            // Sadece ilan sahibi veya Admin düzenleyebilir
+            if (estate.AppUserId != userId && !isAdmin)
+                return Forbid();
 
             estate.Title = model.Title;
             estate.Description = model.Description;
@@ -172,6 +196,7 @@ namespace EmlakPortal.API.Controllers
             var estates = await _estateRepo.AsQueryable()
                 .Include(e => e.Category)
                 .Include(e => e.AppUser)
+                .Include(e => e.Images)
                 .Where(e => e.IsActive && e.CategoryId == categoryId)
                 .Select(e => new EstateDto
                 {
@@ -184,7 +209,13 @@ namespace EmlakPortal.API.Controllers
                     StatusName = e.Status == EstateStatus.Satilik ? "Satılık" : "Kiralık",
                     CategoryName = e.Category!.Name,
                     AddedBy = e.AppUser!.FullName,
-                    CreatedDate = e.CreatedDate
+                    CreatedDate = e.CreatedDate,
+                    ImageUrl = e.ImageUrl,
+                    ImageUrls = e.Images.Select(i => i.ImageUrl).ToList(),
+                    ImageIds = e.Images.Select(i => i.Id).ToList(),
+                    SellerFullName = e.AppUser!.FullName,
+                    SellerPhone = e.AppUser.PhoneNumber,
+                    SellerEmail = e.AppUser.Email
                 }).ToListAsync();
 
             return Ok(estates);
@@ -231,7 +262,11 @@ namespace EmlakPortal.API.Controllers
                 IsActive = e.IsActive,
                 CreatedDate = e.CreatedDate,
                 ImageUrl = e.ImageUrl,
-                ImageUrls = e.Images.Select(i => i.ImageUrl).ToList()
+                ImageIds = e.Images.Select(i => i.Id).ToList(),
+                ImageUrls = e.Images.Select(i => i.ImageUrl).ToList(),
+                SellerFullName = e.AppUser!.FullName,
+                SellerPhone = e.AppUser.PhoneNumber,
+                SellerEmail = e.AppUser.Email
             }).ToListAsync();
 
             if (estates.Count == 0)
@@ -241,7 +276,7 @@ namespace EmlakPortal.API.Controllers
         }
 
         // YÖNETİCİ PANELİ: İlana Vitrin Fotoğrafı Yükleme
-        [Authorize(Roles = "Admin")]
+
         [HttpPost("{id}/ImageUpload")]
         public async Task<IActionResult> UploadImage(int id, IFormFile file)
         {
@@ -273,46 +308,113 @@ namespace EmlakPortal.API.Controllers
         }
 
         // YÖNETİCİ PANELİ: İlana ÇOKLU Fotoğraf Yükleme (Galeri)
-        [Authorize(Roles = "Admin")]
         [HttpPost("{id}/UploadImages")]
         public async Task<IActionResult> UploadImages(int id, [FromForm] List<IFormFile> files)
         {
-            if (files == null || files.Count == 0)
-                return BadRequest(new ResultDto { Status = false, Message = "Lütfen en az bir fotoğraf seçin." });
-
-            var estate = await _estateRepo.GetByIdAsync(id);
-            if (estate == null)
-                return NotFound(new ResultDto { Status = false, Message = "İlan bulunamadı." });
-
-            var webRootPath = _env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-            var uploadsFolder = Path.Combine(webRootPath, "images");
-            if (!Directory.Exists(uploadsFolder))
-                Directory.CreateDirectory(uploadsFolder);
-
-            foreach (var file in files)
+            try
             {
-                if (file.Length == 0) continue;
+                if (files == null || files.Count == 0)
+                    return BadRequest(new ResultDto { Status = false, Message = "Lütfen en az bir fotoğraf seçin." });
 
-                var uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
-                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                var estate = await _estateRepo.GetByIdAsync(id);
+                if (estate == null)
+                    return NotFound(new ResultDto { Status = false, Message = "İlan bulunamadı." });
 
-                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                var webRootPath = _env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+                var uploadsFolder = Path.Combine(webRootPath, "images");
+                if (!Directory.Exists(uploadsFolder))
+                    Directory.CreateDirectory(uploadsFolder);
+
+                foreach (var file in files)
                 {
-                    await file.CopyToAsync(fileStream);
+                    if (file.Length == 0) continue;
+
+                    var uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+                    var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await file.CopyToAsync(fileStream);
+                    }
+
+                    var estateImage = new EstateImage
+                    {
+                        EstateId = id,
+                        ImageUrl = "/images/" + uniqueFileName,
+                        CreatedDate = DateTime.Now,
+                        IsActive = true
+                    };
+                    await _context.EstateImages.AddAsync(estateImage);
                 }
 
-                var estateImage = new EstateImage
-                {
-                    EstateId = id,
-                    ImageUrl = "/images/" + uniqueFileName,
-                    CreatedDate = DateTime.Now,
-                    IsActive = true
-                };
-                await _context.EstateImages.AddAsync(estateImage);
+                await _context.SaveChangesAsync();
+                return Ok(new ResultDto { Status = true, Message = $"{files.Count} fotoğraf başarıyla yüklendi." });
             }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResultDto { Status = false, Message = $"Dosya yükleme hatası: {ex.Message}" });
+            }
+        }
 
+        // YÖNETİCİ PANELİ: Tekil Galeri Fotoğrafı Silme
+        [Authorize] // Admin + kullanıcı (ilan sahibi) silebilir
+        [HttpDelete("Image/{imageId}")]
+        public async Task<IActionResult> DeleteEstateImage(int imageId)
+        {
+            var image = await _context.EstateImages
+                .Include(i => i.Estate)
+                .FirstOrDefaultAsync(i => i.Id == imageId);
+
+            if (image == null)
+                return NotFound(new ResultDto { Status = false, Message = "Fotoğraf bulunamadı." });
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var isAdmin = User.IsInRole("Admin");
+
+            // Sadece ilan sahibi veya admin silebilir
+            if (image.Estate.AppUserId != userId && !isAdmin)
+                return Forbid();
+
+            // Dosyayı diskten sil
+            var webRootPath = _env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var filePath = Path.Combine(webRootPath, image.ImageUrl.TrimStart('/'));
+            if (System.IO.File.Exists(filePath))
+                System.IO.File.Delete(filePath);
+
+            _context.EstateImages.Remove(image);
             await _context.SaveChangesAsync();
-            return Ok(new ResultDto { Status = true, Message = $"{files.Count} fotoğraf başarıyla yüklendi." });
+
+            return Ok(new ResultDto { Status = true, Message = "Fotoğraf silindi." });
+        }
+        [Authorize]
+        [HttpGet("MyEstates")]
+        public async Task<IActionResult> GetMyEstates()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var estates = await _estateRepo.AsQueryable()
+                .Include(e => e.Category)
+                .Include(e => e.AppUser)
+                .Include(e => e.Images)
+                .Where(e => e.AppUserId == userId && e.IsActive) // ← IsActive filtresi eklendi
+                .OrderByDescending(e => e.CreatedDate)
+                .Select(e => new EstateDto
+                {
+                    Id = e.Id,
+                    Title = e.Title,
+                    Price = e.Price,
+                    RoomCount = e.RoomCount,
+                    SquareMeters = e.SquareMeters,
+                    City = e.City,
+                    StatusName = e.Status == EstateStatus.Satilik ? "Satılık" : "Kiralık",
+                    CategoryName = e.Category!.Name,
+                    IsActive = e.IsActive,
+                    CreatedDate = e.CreatedDate,
+                    ImageUrl = e.ImageUrl,
+                    ImageUrls = e.Images.Select(i => i.ImageUrl).ToList()
+                }).ToListAsync();
+
+            return Ok(estates);
         }
     }
 }

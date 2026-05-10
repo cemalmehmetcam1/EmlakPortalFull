@@ -31,5 +31,14 @@ namespace EmlakPortal.UI.Controllers
         public IActionResult Detail(int id) => View();
 
         public IActionResult Profile() => View();
+
+        public IActionResult MyEstates()
+        {
+            return View();
+        }
+        public IActionResult Favorites()
+        {
+            return View();
+        }
     }
 }

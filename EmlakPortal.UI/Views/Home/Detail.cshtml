@@ -10,14 +10,18 @@
 
 @section Scripts {
     <script>
+        var token = localStorage.getItem("token");
+        function getHeaders() { return { "Authorization": "Bearer " + token }; }
+
         var id = window.location.pathname.split('/').pop();
-        $(function() {
+
+        function loadDetail() {
             $.ajax({
                 url: "https://localhost:7279/api/Estate/" + id,
                 success: function(item) {
-                    var html = `<div class="card shadow rounded-4">`;
+                    var html = `<div class="card shadow rounded-4 overflow-hidden">`;
 
-                    // Galeri varsa carousel, yoksa tek resim
+                    // Galeri / tek resim
                     if (item.imageUrls && item.imageUrls.length > 0) {
                         var indicators = '';
                         var innerItems = '';
@@ -35,30 +39,108 @@
                                 <div class="carousel-inner">${innerItems}</div>
                                 <button class="carousel-control-prev" type="button" data-bs-target="#carouselDetail" data-bs-slide="prev">
                                     <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                    <span class="visually-hidden">Önceki</span>
                                 </button>
                                 <button class="carousel-control-next" type="button" data-bs-target="#carouselDetail" data-bs-slide="next">
                                     <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                    <span class="visually-hidden">Sonraki</span>
                                 </button>
                             </div>`;
                     } else {
-                        // Vitrin fotoğrafı veya varsayılan
                         html += `<img src="${item.imageUrl ? 'https://localhost:7279' + item.imageUrl : 'https://localhost:7279/images/default.jpg'}" class="card-img-top" style="max-height:400px;object-fit:cover;" />`;
                     }
 
-                    html += `
-                            <div class="card-body">
-                                <h2>${item.title}</h2>
-                                <p>${item.description || ''}</p>
-                                <h4 class="text-primary">${item.price.toLocaleString('tr-TR')} ₺</h4>
-                                <p><strong>Oda:</strong> ${item.roomCount} | <strong>m²:</strong> ${item.squareMeters} | <strong>Şehir:</strong> ${item.city}</p>
-                                <p><strong>Durum:</strong> ${item.statusName} | <strong>Kategori:</strong> ${item.categoryName} | <strong>Ekleyen:</strong> ${item.addedBy}</p>
+                    // Başlık ve favori butonu
+                    html += `<div class="card-body position-relative">`;
+                    html += `<h2 class="card-title">${item.title}
+                                <button class="btn btn-link p-0 ms-2 btn-fav" data-id="${item.id}"
+                                        style="font-size:1.8rem; color:red; text-decoration:none; vertical-align:middle;"
+                                        title="Favorilere ekle / çıkar">
+                                    <i class="far fa-heart"></i>
+                                </button>
+                             </h2>`;
+                    html += `<p class="text-muted">${item.description || ''}</p>`;
+
+                    // İlan bilgileri ve konum
+                    html += `<div class="row mb-3">
+                                <div class="col-md-6">
+                                    <h4 class="text-primary fw-bold">${item.price.toLocaleString('tr-TR')} ₺</h4>
+                                    <p><strong>Oda Sayısı:</strong> ${item.roomCount} | <strong>m²:</strong> ${item.squareMeters}</p>
+                                    <p><strong>Durum:</strong> <span class="badge bg-success">${item.statusName}</span></p>
+                                    <p><strong>Kategori:</strong> ${item.categoryName}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="bg-light p-3 rounded">
+                                        <h5><i class="fas fa-map-marker-alt text-danger"></i> Konum</h5>
+                                        <p>${item.city} – ${item.address}</p>
+                                        <a href="https://www.google.com/maps?q=${encodeURIComponent(item.address + ' ' + item.city)}" target="_blank" class="btn btn-outline-danger btn-sm">
+                                            <i class="fas fa-map"></i> Google Haritalar'da Gör
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>`;
+
+                    // Satıcı bilgileri
+                    html += `<hr />
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="card bg-light border">
+                                        <div class="card-body">
+                                            <h5 class="card-title"><i class="fas fa-user-circle"></i> İlan Sahibi</h5>
+                                            <div class="row">
+                                                <div class="col-sm-6">
+                                                    <p><strong>Ad Soyad:</strong> ${item.sellerFullName || item.addedBy}</p>
+                                                    <p><strong>Telefon:</strong> <a href="tel:${item.sellerPhone}">${item.sellerPhone || 'Belirtilmemiş'}</a></p>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <p><strong>E-posta:</strong> <a href="mailto:${item.sellerEmail}">${item.sellerEmail || 'Belirtilmemiş'}</a></p>
+                                                    <button class="btn btn-success btn-sm" onclick="window.location.href='tel:${item.sellerPhone}'">
+                                                        <i class="fas fa-phone-alt"></i> Hemen Ara
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                        </div>`;
+                        </div>
+                    </div>`;
+
                     $("#detailContent").html(html);
+                    updateFavButton();
                 }
             });
+        }
+
+        // Favori durumunu güncelle
+        function updateFavButton() {
+            if (!token) return;
+            $.ajax({
+                url: "https://localhost:7279/api/Favorite",
+                headers: getHeaders(),
+                success: function(favs) {
+                    var isFav = favs.some(f => f.id == id);
+                    $(".btn-fav").html(isFav ? '<i class="fas fa-heart"></i>' : '<i class="far fa-heart"></i>');
+                }
+            });
+        }
+
+        $(document).on("click", ".btn-fav", function(e){
+            e.preventDefault();
+            if (!token) { alert("Favorilere eklemek için giriş yapmalısınız."); return; }
+            $.ajax({
+                url: "https://localhost:7279/api/Favorite/Toggle/" + id,
+                type: "POST",
+                headers: getHeaders(),
+                success: function(res) {
+                    if (res.status) {
+                        var isFav = res.data;
+                        $(".btn-fav").html(isFav ? '<i class="fas fa-heart"></i>' : '<i class="far fa-heart"></i>');
+                    }
+                }
+            });
+        });
+
+        $(function(){
+            loadDetail();
         });
     </script>
 }

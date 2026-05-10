@@ -1,0 +1,88 @@
+﻿@{
+    Layout = "~/Views/Shared/_LayoutPublic.cshtml";
+    ViewData["Title"] = "Favori İlanlarım";
+}
+<div class="container">
+    <h3 class="mb-4"><i class="fas fa-heart text-danger me-2"></i>Favori İlanlarım</h3>
+    <div id="favoriteList" class="row">
+        <!-- AJAX ile doldurulacak -->
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function getHeaders() {
+            var token = localStorage.getItem("token");
+            return { "Authorization": "Bearer " + token };
+        }
+
+        function loadFavorites() {
+            $.ajax({
+                url: "https://localhost:7279/api/Favorite",
+                type: "GET",
+                headers: getHeaders(),
+                success: function (data) {
+                    var html = "";
+                    if (data.length === 0) {
+                        html = '<div class="col-12 text-center"><p>Henüz favori ilanınız yok.</p></div>';
+                    } else {
+                        $.each(data, function (i, item) {
+                            html += `<div class="col-md-4 mb-4">
+                                        <div class="card h-100 position-relative">
+                                            <button class="btn btn-link position-absolute top-0 end-0 m-2 p-0 btn-remove-fav"
+                                                    data-id="${item.id}" style="z-index:10; font-size:1.5rem; color:red; text-decoration:none;"
+                                                    title="Favoriden çıkar">
+                                                <i class="fas fa-heart"></i>
+                                            </button>
+                                            <div style="position: relative;">
+                                                <img src="${item.imageUrl ? 'https://localhost:7279' + item.imageUrl : 'https://localhost:7279/images/default.jpg'}" class="card-img-top" style="height:200px; object-fit:cover" />`;
+                            if (item.imageUrls && item.imageUrls.length > 1) {
+                                html += `<span class="badge bg-dark position-absolute bottom-0 end-0 m-2">${item.imageUrls.length} fotoğraf</span>`;
+                            }
+                            html += `</div>
+                                        <div class="card-body">
+                                            <h5 class="card-title">${item.title}</h5>
+                                            <p>${item.price.toLocaleString('tr-TR')} TL</p>
+                                            <p>${item.roomCount} Oda - ${item.squareMeters} m²</p>
+                                            <p>${item.statusName}</p>
+                                            <a href="/Home/Detail/${item.id}" class="btn btn-primary btn-sm">Detay</a>
+                                        </div>
+                                    </div>
+                                </div>`;
+                        });
+                    }
+                    $("#favoriteList").html(html);
+                },
+                error: function () {
+                    alert("Favori ilanlarınız yüklenirken bir hata oluştu.");
+                }
+            });
+        }
+
+        // Favoriden çıkar
+        $(document).on("click", ".btn-remove-fav", function (e) {
+            e.preventDefault();
+            var id = $(this).data("id");
+            var card = $(this).closest(".col-md-4");
+            $.ajax({
+                url: "https://localhost:7279/api/Favorite/Toggle/" + id,
+                type: "POST",
+                headers: getHeaders(),
+                success: function (res) {
+                    if (res.status && res.data === false) {
+                        card.fadeOut(300, function () { $(this).remove(); });
+                    }
+                }
+            });
+        });
+
+        $(function () {
+            var token = localStorage.getItem("token");
+            if (!token) {
+                window.location.href = "/Auth/Login";
+                return;
+            }
+            loadFavorites();
+        });
+    </script>
+}

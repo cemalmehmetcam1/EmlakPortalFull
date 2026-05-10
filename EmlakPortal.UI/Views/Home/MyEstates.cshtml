@@ -1,0 +1,144 @@
+﻿@{
+    Layout = "~/Views/Shared/_LayoutPublic.cshtml";
+    ViewData["Title"] = "İlanlarım";
+}
+<div class="container">
+    <h3 class="mb-4"><i class="fas fa-building me-2"></i>İlanlarım</h3>
+    <div id="myEstateList" class="row">
+        <!-- AJAX ile doldurulacak -->
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var token = localStorage.getItem("token");
+        if (!token) { window.location.href = "/Auth/Login"; }
+
+        function loadMyEstates() {
+            $.ajax({
+                url: "https://localhost:7279/api/Estate/MyEstates",
+                type: "GET",
+                headers: { "Authorization": "Bearer " + token },
+                success: function (data) {
+                    var html = "";
+                    if (data.length === 0) {
+                        html = '<div class="col-12 text-center"><p>Henüz aktif ilanınız yok.</p></div>';
+                    } else {
+                        $.each(data, function (i, item) {
+                            html += `<div class="col-md-4 mb-4" id="estate-${item.id}">
+                                        <div class="card h-100">
+                                            <div style="position: relative;">
+                                                <img src="${item.imageUrl ? 'https://localhost:7279' + item.imageUrl : 'https://localhost:7279/images/default.jpg'}" class="card-img-top" style="height:200px; object-fit:cover" />`;
+                            if (item.imageUrls && item.imageUrls.length > 1) {
+                                html += `<span class="badge bg-dark position-absolute bottom-0 end-0 m-2">${item.imageUrls.length} fotoğraf</span>`;
+                            }
+                            html += `</div>
+                                            <div class="card-body">
+                                                <h5 class="card-title">${item.title}</h5>
+                                                <p class="card-text">
+                                                    ${item.price.toLocaleString('tr-TR')} TL<br/>
+                                                    ${item.roomCount} Oda - ${item.squareMeters} m²<br/>
+                                                    ${item.city} - ${item.statusName}
+                                                </p>
+                                                <p><span class="badge ${item.isActive ? 'bg-success' : 'bg-secondary'}">${item.isActive ? 'Aktif' : 'Pasif'}</span></p>
+                                                <div class="d-flex gap-2">
+                                                    <a href="/Home/Detail/${item.id}" class="btn btn-outline-primary btn-sm">Detay</a>
+                                                    <button class="btn btn-outline-warning btn-sm btn-edit" data-id="${item.id}">Düzenle</button>
+                                                    <button class="btn btn-outline-danger btn-sm btn-delete" data-id="${item.id}">Sil</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>`;
+                        });
+                    }
+                    $("#myEstateList").html(html);
+                },
+                error: function () {
+                    alert("İlanlarınız yüklenirken bir hata oluştu.");
+                }
+            });
+        }
+
+        // Sil butonu
+        $(document).on("click", ".btn-delete", function () {
+            if (!confirm("Bu ilanı silmek istediğinize emin misiniz?")) return;
+            var id = $(this).data("id");
+            $.ajax({
+                url: "https://localhost:7279/api/Estate/" + id,
+                type: "DELETE",
+                headers: { "Authorization": "Bearer " + token },
+                success: function (res) {
+                    if (res.status) {
+                        $("#estate-" + id).fadeOut(300, function () { $(this).remove(); });
+                    } else {
+                        alert(res.message || "Silme başarısız.");
+                    }
+                },
+                error: function () {
+                    alert("Silme sırasında bir hata oluştu.");
+                }
+            });
+        });
+
+        // Düzenle butonu → Public modal'ı doldur
+        $(document).on("click", ".btn-edit", function () {
+            var id = $(this).data("id");
+            $.ajax({
+                url: "https://localhost:7279/api/Estate/" + id,
+                headers: { "Authorization": "Bearer " + token },
+                success: function (item) {
+                    // Formu sıfırla ve düzenleme moduna hazırla
+                    resetPublicForm();
+                    $("#hdnPublicEstateId").val(item.id);
+                    $("#txtPublicTitle").val(item.title);
+                    $("#txtPublicPrice").val(item.price);
+                    $("#txtPublicRoomCount").val(item.roomCount);
+                    $("#txtPublicSquareMeters").val(item.squareMeters);
+                    $("#cmbPublicCity").val(item.city);
+                    $("#txtPublicAddress").val(item.address);
+                    $("#cmbPublicStatus").val(item.statusName === "Satılık" ? "1" : "2");
+                    $("#txtPublicDescription").val(item.description || "");
+                    $("#cmbPublicIsActive").val(item.isActive ? "true" : "false");
+
+                    if (item.imageUrl) {
+                        $("#imgPublicPreview").attr("src", "https://localhost:7279" + item.imageUrl).show();
+                    } else {
+                        $("#imgPublicPreview").hide();
+                    }
+
+                    // Galeri önizlemesi – SİLME BUTONLARI İLE
+                    $("#galleryPublicPreview").empty();
+                    if (item.imageUrls && item.imageUrls.length > 0) {
+                        $.each(item.imageUrls, function (i, url) {
+                            var imageId = item.imageIds[i]; // API'den gelen ImageIds dizisi
+                            var imgHtml = `
+                                <div class="position-relative" style="display:inline-block; margin:2px;">
+                                    <img src="https://localhost:7279${url}" style="height:60px;" class="rounded shadow-sm" />
+                                    <span class="badge bg-danger position-absolute top-0 end-0 btn-delete-gallery-image"
+                                          style="cursor:pointer; font-size:14px; padding:2px 6px; border-radius:50%;"
+                                          data-imageid="${imageId}"
+                                          title="Fotoğrafı sil">×</span>
+                                </div>`;
+                            $("#galleryPublicPreview").append(imgHtml);
+                        });
+                    }
+
+                    // Kategorileri yükle ve seç
+                    loadPublicCategories(function () {
+                        $("#cmbPublicCategory").val(item.categoryId);
+                    });
+
+                    $("#publicEstateModal .modal-title").text("İlan Düzenle");
+                    $("#publicEstateModal").modal("show");
+                },
+                error: function () {
+                    alert("İlan bilgisi alınamadı.");
+                }
+            });
+        });
+
+        $(function () {
+            loadMyEstates();
+        });
+    </script>
+}

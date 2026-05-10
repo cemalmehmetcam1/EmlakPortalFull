@@ -31,7 +31,8 @@ namespace EmlakPortal.API.Controllers
             {
                 UserName = model.UserName,
                 Email = model.Email,
-                FullName = model.FullName
+                FullName = model.FullName,
+                PhoneNumber = model.PhoneNumber
             };
 
             var result = await _userManager.CreateAsync(user, model.Password);
@@ -115,12 +116,23 @@ namespace EmlakPortal.API.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetUsers()
         {
-            var users = await _userManager.Users.ToListAsync();
+            var users = await _userManager.Users
+                .Include(u => u.Estates)   // Kullanıcının ilanları yükleniyor
+                .ToListAsync();
+
             var userList = new List<object>();
             foreach (var u in users)
             {
                 var roles = await _userManager.GetRolesAsync(u);
-                userList.Add(new { u.Id, u.UserName, u.FullName, u.Email, Roles = roles });
+                userList.Add(new
+                {
+                    u.Id,
+                    u.UserName,
+                    u.FullName,
+                    u.Email,
+                    Roles = roles,
+                    EstateCount = u.Estates?.Count ?? 0   // İlan sayısı
+                });
             }
             return Ok(userList);
         }
@@ -151,6 +163,7 @@ namespace EmlakPortal.API.Controllers
                 user.UserName,
                 user.FullName,
                 user.Email,
+                user.PhoneNumber,
                 Role = roles.FirstOrDefault() ?? "User"
             };
 
@@ -169,6 +182,7 @@ namespace EmlakPortal.API.Controllers
 
             user.FullName = model.FullName;
             user.Email = model.Email;
+            user.PhoneNumber = model.PhoneNumber;
 
             // Şifre güncelleme (opsiyonel)
             if (!string.IsNullOrEmpty(model.CurrentPassword) && !string.IsNullOrEmpty(model.NewPassword))

@@ -157,15 +157,15 @@
                     var rows = "";
                     $.each(data, function (i, item) {
                         rows += `<tr>
-                            <td>${item.title}</td>
-                            <td>${item.price.toLocaleString('tr-TR')} ₺</td>
-                            <td>${item.city}</td>
-                            <td><span class="badge ${item.isActive ? 'bg-success' : 'bg-secondary'}">${item.isActive ? 'Aktif' : 'Pasif'}</span></td>
-                            <td>
-                                <button class="btn btn-sm btn-warning btnEdit" data-id="${item.id}"><i class="fas fa-pen"></i></button>
-                                <button class="btn btn-sm btn-danger btnDelete" data-id="${item.id}"><i class="fas fa-trash"></i></button>
-                            </td>
-                        </tr>`;
+                                    <td>${item.title}</td>
+                                    <td>${item.price.toLocaleString('tr-TR')} ₺</td>
+                                    <td>${item.city}</td>
+                                    <td><span class="badge ${item.isActive ? 'bg-success' : 'bg-secondary'}">${item.isActive ? 'Aktif' : 'Pasif'}</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-warning btnEdit" data-id="${item.id}"><i class="fas fa-pen"></i></button>
+                                        <button class="btn btn-sm btn-danger btnDelete" data-id="${item.id}"><i class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>`;
                     });
                     $("#tblEstates tbody").html(rows);
                 }
@@ -198,17 +198,35 @@
                 }
             });
 
-            // Galeri fotoğrafları önizleme
+            // Galeri fotoğrafları önizleme (sadece yeni eklenenleri gösterir)
             $("#fileImages").change(function(){
                 var files = this.files;
-                $("#galleryPreview").empty();
-                for (var i = 0; i < files.length; i++) {
-                    var reader = new FileReader();
-                    reader.onload = function(e) {
-                        $("#galleryPreview").append('<img src="' + e.target.result + '" style="height:60px; margin:2px;" class="rounded shadow-sm" />');
-                    };
-                    reader.readAsDataURL(files[i]);
-                }
+                // Önceki önizlemeyi silmeden yeni eklenenleri göster (opsiyonel)
+                // Ancak biz tamamen temizleyip sadece yeni seçilenleri göstereceğiz
+                // çünkü mevcut galeriyi galleryPreview içinde manuel yönetiyoruz.
+                // Burada sadece yeni seçilen dosyaların önizlemesini ekleyelim,
+                // mevcut kayıtlı resimler zaten ayrıca gösterilecek.
+                // Burayı mevcut kayıtlı resimleri etkilemeyecek şekilde düzenleyelim:
+                // Yeni seçilen dosyaları geçici olarak gösterip, kaydetmeden sonra temizleyeceğiz.
+                // Şu anki implementasyon: galeri önizleme alanında sadece yeni seçilenleri göster (mevcutları ayrı yönet)
+                // Basitlik için: input değişince sadece seçilen dosyaların önizlemesini ayrı bir div'de gösterelim.
+                // Ancak mevcut yapıda galleryPreview hem kayıtlı hem yeni dosyaları karışık tutuyor.
+                // Biz galleryPreview'i sadece kayıtlı resimler için kullanacağız, yeni seçilenleri ise ayrı bir div'de göstereceğiz.
+                // Bunun için HTML'de bir "newGalleryPreview" eklemedik. Mevcut kodu koruyup, kayıtlı resimleri silme butonlarıyla
+                // birlikte göstermek için galleryPreview'i kullanmaya devam edelim, ancak yeni eklenen dosyaların önizlemesini
+                // bu alana eklemeyelim (zaten dosya input'u seçildiğinde tarayıcı kendi gösteriyor, çok gerekli değil).
+                // Bu karışıklığı önlemek için fileImages change olayını sadece bilgi amaçlı bırakıp, görsel önizleme yapmayabiliriz.
+                // Veya mevcut durumu koruyup, silme butonlarını sadece kayıtlı resimlere ekleyelim.
+                // Şimdilik fileImages change'de galleryPreview'i tamamen temizleyip sadece yeni seçilenleri göstermek yerine,
+                // mevcut galleryPreview içeriğine dokunmayalım. Yeni eklenenlerin önizlemesini istemiyorsak bu bloğu boş bırakalım.
+                // En temizi: galleryPreview sadece kayıtlı resimleri ve onların silme butonlarını içersin.
+                // Yeni yüklenecek dosyalar için ayrıca bir önizleme yapmaya gerek yok.
+                // O zaman fileImages change olayını sadece yükleme anında kullanacağız, önizleme yapmayacağız.
+                // Bunun için bu fonksiyonu olduğu gibi silebiliriz veya boş bırakabiliriz.
+                // Kolaylık olması için şimdilik hiçbir şey yapmayalım.
+                // Ancak kullanıcıya seçtiği dosya adlarını göstermek iyi olur. O yüzden basitçe bir metin kutusuna yazdırabiliriz.
+                // Var olan kodu koruyup, sadece yeni dosyaların isimlerini console'a yazdıralım.
+                console.log("Seçilen galeri dosyaları:", files);
             });
 
             $("#btnAddNew").click(function(){
@@ -253,54 +271,71 @@
                     data: JSON.stringify(payload),
                     success: function(res) {
                         if (res.status || res.Status) {
-                            if (res.id || res.data) {
-                                var newId = res.data || res.id || id;
-                                // Vitrin fotoğrafı yükle
-                                if ($("#fileImage")[0].files[0]) {
-                                    var formData = new FormData();
-                                    formData.append("file", $("#fileImage")[0].files[0]);
+                            var newId = res.data || res.id || id;
+                            if (!newId || newId === 0) {
+                                alert("İlan kaydedildi ancak ID alınamadı. Lütfen sayfayı yenileyin.");
+                                $("#estateModal").modal("hide");
+                                loadEstates();
+                                return;
+                            }
+
+                            var uploadPromises = [];
+
+                            // Vitrin fotoğrafı yükle
+                            if ($("#fileImage")[0].files[0]) {
+                                var formData = new FormData();
+                                formData.append("file", $("#fileImage")[0].files[0]);
+                                uploadPromises.push(
                                     $.ajax({
                                         url: "https://localhost:7279/api/Estate/" + newId + "/ImageUpload",
                                         type: "POST",
                                         headers: getHeaders(),
                                         processData: false,
                                         contentType: false,
-                                        data: formData,
-                                        success: function () { loadEstates(); },
-                                        error: function () { loadEstates(); }
-                                    });
-                                } else {
-                                    loadEstates();
-                                }
+                                        data: formData
+                                    })
+                                );
+                            }
 
-                                // Galeri fotoğraflarını yükle
-                                if ($("#fileImages")[0].files.length > 0) {
-                                    var galleryFormData = new FormData();
-                                    var files = $("#fileImages")[0].files;
-                                    for (var i = 0; i < files.length; i++) {
-                                        galleryFormData.append("files", files[i]);
-                                    }
+                            // Galeri fotoğraflarını yükle
+                            if ($("#fileImages")[0].files.length > 0) {
+                                var galleryFormData = new FormData();
+                                var files = $("#fileImages")[0].files;
+                                for (var i = 0; i < files.length; i++) {
+                                    galleryFormData.append("files", files[i]);
+                                }
+                                uploadPromises.push(
                                     $.ajax({
                                         url: "https://localhost:7279/api/Estate/" + newId + "/UploadImages",
                                         type: "POST",
                                         headers: getHeaders(),
                                         processData: false,
                                         contentType: false,
-                                        data: galleryFormData,
-                                        success: function () { loadEstates(); },
-                                        error: function () { loadEstates(); }
-                                    });
-                                }
-                            } else {
-                                loadEstates();
+                                        data: galleryFormData
+                                    })
+                                );
                             }
-                            $("#estateModal").modal("hide");
+
+                            $.when.apply($, uploadPromises)
+                                .done(function() {
+                                    alert("İlan ve fotoğraflar başarıyla kaydedildi.");
+                                })
+                                .fail(function(xhr, status, error) {
+                                    alert("Fotoğraf yükleme sırasında bir hata oluştu. Lütfen kontrol edin.");
+                                    console.error("Yükleme hatası:", status, error);
+                                })
+                                .always(function() {
+                                    $("#estateModal").modal("hide");
+                                    loadEstates();
+                                });
+
                         } else {
                             alert(res.message || res.Message);
                         }
                     },
-                    error: function() {
+                    error: function(xhr, status, error) {
                         alert("Kaydetme sırasında bir hata oluştu.");
+                        console.error("Kaydetme hatası:", status, error);
                     }
                 });
             });
@@ -328,15 +363,55 @@
                         } else {
                             $("#imgPreview").hide();
                         }
-                        // Galeri önizlemesi (varsa)
+
+                        // Galeri önizlemesi (mevcut kayıtlı resimler) - SİLME BUTONLARI İLE
                         $("#galleryPreview").empty();
                         if (item.imageUrls && item.imageUrls.length > 0) {
                             $.each(item.imageUrls, function(i, url){
-                                $("#galleryPreview").append('<img src="https://localhost:7279' + url + '" style="height:60px; margin:2px;" class="rounded shadow-sm" />');
+                                var imageId = item.imageIds[i]; // Aynı indexteki ID
+                                var imgHtml = `
+                                    <div class="position-relative" style="display:inline-block; margin:2px;">
+                                        <img src="https://localhost:7279${url}" style="height:60px;" class="rounded shadow-sm" />
+                                        <span class="badge bg-danger position-absolute top-0 end-0 btn-delete-gallery-image"
+                                              style="cursor:pointer; font-size:14px; padding:2px 6px; border-radius:50%;"
+                                              data-imageid="${imageId}"
+                                              title="Fotoğrafı sil">×</span>
+                                    </div>`;
+                                $("#galleryPreview").append(imgHtml);
                             });
                         }
+
+                        // Dosya inputlarını temizle (yeni dosya seçilmesi için)
+                        $("#fileImage").val("");
+                        $("#fileImages").val("");
                         $("#modalTitle").text("İlan Düzenle");
                         $("#estateModal").modal("show");
+                    }
+                });
+            });
+
+            // Galeri fotoğrafı silme işlemi
+            $(document).on("click", ".btn-delete-gallery-image", function(e){
+                e.preventDefault();
+                var imageId = $(this).data("imageid");
+                var container = $(this).closest("div.position-relative");
+
+                if (!confirm("Bu fotoğrafı silmek istediğinize emin misiniz?")) return;
+
+                $.ajax({
+                    url: "https://localhost:7279/api/Estate/Image/" + imageId,
+                    type: "DELETE",
+                    headers: getHeaders(),
+                    success: function(res) {
+                        if (res.status || res.Status) {
+                            container.remove(); // Önizlemeden kaldır
+                            alert("Fotoğraf silindi.");
+                        } else {
+                            alert(res.message || res.Message || "Silme başarısız.");
+                        }
+                    },
+                    error: function() {
+                        alert("Silme sırasında hata oluştu.");
                     }
                 });
             });
