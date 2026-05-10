@@ -2,10 +2,10 @@
 {
     public class EstateFilterDto
     {
-        public decimal? MinPrice { get; set; } // Minimum Fiyat
-        public decimal? MaxPrice { get; set; } // Maksimum Fiyat
-        public string? City { get; set; } // Şehir
-        public int? RoomCount { get; set; } // Oda Sayısı
-        public int? Status { get; set; } // 1: Satılık, 2: Kiralık
+        public decimal? MinPrice { get; set; } 
+        public decimal? MaxPrice { get; set; } 
+        public string? City { get; set; } 
+        public int? RoomCount { get; set; } 
+        public int? Status { get; set; } 
     }
 }

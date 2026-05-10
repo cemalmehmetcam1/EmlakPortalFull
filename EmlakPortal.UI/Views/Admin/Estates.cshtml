@@ -14,7 +14,7 @@
     </div>
 </div>
 
-<!-- Modal: Ekle/Düzenle -->
+
 <div class="modal fade" id="estateModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -129,7 +129,7 @@
                             <img id="imgPreview" src="" style="max-height:100px; display:none;" class="rounded shadow-sm" />
                         </div>
                     </div>
-                    <!-- Galeri Fotoğrafları -->
+
                     <div class="col-md-12 mb-2">
                         <label>Galeri Fotoğrafları (isteğe bağlı, birden fazla seçin)</label>
                         <input type="file" id="fileImages" class="form-control" accept="image/*" multiple />
@@ -184,7 +184,7 @@
             loadEstates();
             loadCategories();
 
-            // Vitrin fotoğrafı önizleme
+
             $("#fileImage").change(function(){
                 var file = this.files[0];
                 if (file) {
@@ -198,34 +198,10 @@
                 }
             });
 
-            // Galeri fotoğrafları önizleme (sadece yeni eklenenleri gösterir)
+           
             $("#fileImages").change(function(){
                 var files = this.files;
-                // Önceki önizlemeyi silmeden yeni eklenenleri göster (opsiyonel)
-                // Ancak biz tamamen temizleyip sadece yeni seçilenleri göstereceğiz
-                // çünkü mevcut galeriyi galleryPreview içinde manuel yönetiyoruz.
-                // Burada sadece yeni seçilen dosyaların önizlemesini ekleyelim,
-                // mevcut kayıtlı resimler zaten ayrıca gösterilecek.
-                // Burayı mevcut kayıtlı resimleri etkilemeyecek şekilde düzenleyelim:
-                // Yeni seçilen dosyaları geçici olarak gösterip, kaydetmeden sonra temizleyeceğiz.
-                // Şu anki implementasyon: galeri önizleme alanında sadece yeni seçilenleri göster (mevcutları ayrı yönet)
-                // Basitlik için: input değişince sadece seçilen dosyaların önizlemesini ayrı bir div'de gösterelim.
-                // Ancak mevcut yapıda galleryPreview hem kayıtlı hem yeni dosyaları karışık tutuyor.
-                // Biz galleryPreview'i sadece kayıtlı resimler için kullanacağız, yeni seçilenleri ise ayrı bir div'de göstereceğiz.
-                // Bunun için HTML'de bir "newGalleryPreview" eklemedik. Mevcut kodu koruyup, kayıtlı resimleri silme butonlarıyla
-                // birlikte göstermek için galleryPreview'i kullanmaya devam edelim, ancak yeni eklenen dosyaların önizlemesini
-                // bu alana eklemeyelim (zaten dosya input'u seçildiğinde tarayıcı kendi gösteriyor, çok gerekli değil).
-                // Bu karışıklığı önlemek için fileImages change olayını sadece bilgi amaçlı bırakıp, görsel önizleme yapmayabiliriz.
-                // Veya mevcut durumu koruyup, silme butonlarını sadece kayıtlı resimlere ekleyelim.
-                // Şimdilik fileImages change'de galleryPreview'i tamamen temizleyip sadece yeni seçilenleri göstermek yerine,
-                // mevcut galleryPreview içeriğine dokunmayalım. Yeni eklenenlerin önizlemesini istemiyorsak bu bloğu boş bırakalım.
-                // En temizi: galleryPreview sadece kayıtlı resimleri ve onların silme butonlarını içersin.
-                // Yeni yüklenecek dosyalar için ayrıca bir önizleme yapmaya gerek yok.
-                // O zaman fileImages change olayını sadece yükleme anında kullanacağız, önizleme yapmayacağız.
-                // Bunun için bu fonksiyonu olduğu gibi silebiliriz veya boş bırakabiliriz.
-                // Kolaylık olması için şimdilik hiçbir şey yapmayalım.
-                // Ancak kullanıcıya seçtiği dosya adlarını göstermek iyi olur. O yüzden basitçe bir metin kutusuna yazdırabiliriz.
-                // Var olan kodu koruyup, sadece yeni dosyaların isimlerini console'a yazdıralım.
+                
                 console.log("Seçilen galeri dosyaları:", files);
             });
 
@@ -244,7 +220,7 @@
                 $("#estateModal").modal("show");
             });
 
-            // Kaydet (YENİ / GÜNCELLE)
+
             $("#btnSave").click(function(){
                 var id = parseInt($("#hdnEstateId").val());
                 var isNew = id === 0;
@@ -281,7 +257,7 @@
 
                             var uploadPromises = [];
 
-                            // Vitrin fotoğrafı yükle
+
                             if ($("#fileImage")[0].files[0]) {
                                 var formData = new FormData();
                                 formData.append("file", $("#fileImage")[0].files[0]);
@@ -297,7 +273,7 @@
                                 );
                             }
 
-                            // Galeri fotoğraflarını yükle
+  
                             if ($("#fileImages")[0].files.length > 0) {
                                 var galleryFormData = new FormData();
                                 var files = $("#fileImages")[0].files;
@@ -340,7 +316,7 @@
                 });
             });
 
-            // Düzenle butonu
+
             $(document).on("click", ".btnEdit", function(){
                 var id = $(this).data("id");
                 $.ajax({
@@ -364,11 +340,10 @@
                             $("#imgPreview").hide();
                         }
 
-                        // Galeri önizlemesi (mevcut kayıtlı resimler) - SİLME BUTONLARI İLE
                         $("#galleryPreview").empty();
                         if (item.imageUrls && item.imageUrls.length > 0) {
                             $.each(item.imageUrls, function(i, url){
-                                var imageId = item.imageIds[i]; // Aynı indexteki ID
+                                var imageId = item.imageIds[i];
                                 var imgHtml = `
                                     <div class="position-relative" style="display:inline-block; margin:2px;">
                                         <img src="https://localhost:7279${url}" style="height:60px;" class="rounded shadow-sm" />
@@ -381,7 +356,7 @@
                             });
                         }
 
-                        // Dosya inputlarını temizle (yeni dosya seçilmesi için)
+
                         $("#fileImage").val("");
                         $("#fileImages").val("");
                         $("#modalTitle").text("İlan Düzenle");
@@ -390,7 +365,7 @@
                 });
             });
 
-            // Galeri fotoğrafı silme işlemi
+
             $(document).on("click", ".btn-delete-gallery-image", function(e){
                 e.preventDefault();
                 var imageId = $(this).data("imageid");
@@ -404,7 +379,7 @@
                     headers: getHeaders(),
                     success: function(res) {
                         if (res.status || res.Status) {
-                            container.remove(); // Önizlemeden kaldır
+                            container.remove(); 
                             alert("Fotoğraf silindi.");
                         } else {
                             alert(res.message || res.Message || "Silme başarısız.");
@@ -416,7 +391,7 @@
                 });
             });
 
-            // Sil (soft delete)
+    
             $(document).on("click", ".btnDelete", function(){
                 if (!confirm("Bu ilanı silmek istediğinize emin misiniz?")) return;
                 var id = $(this).data("id");

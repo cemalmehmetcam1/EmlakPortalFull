@@ -28,7 +28,7 @@ namespace EmlakPortal.API.Controllers
             _env = env;
         }
 
-        // GENEL ARA YÜZ: Tüm aktif ilanları listeler (Giriş yapmaya gerek yok)
+        
         [HttpGet]
         public async Task<IActionResult> GetEstates()
         {
@@ -64,7 +64,7 @@ namespace EmlakPortal.API.Controllers
             return Ok(estates);
         }
 
-        // GENEL ARA YÜZ: İlanın detayına girme (ID'ye göre)
+      
         [HttpGet("{id}")]
         public async Task<IActionResult> GetEstateById(int id)
         {
@@ -104,7 +104,7 @@ namespace EmlakPortal.API.Controllers
             return Ok(estateDto);
         }
 
-        // YÖNETİCİ PANELİ: Yeni İlan Ekleme (Sadece Admin yetkililer yapabilir)
+        
         
         [HttpPost]
         public async Task<IActionResult> AddEstate(EstateCreateDto model)
@@ -133,7 +133,7 @@ namespace EmlakPortal.API.Controllers
             return Ok(new ResultDto { Status = true, Message = "İlan başarıyla eklendi.", Data = estate.Id });
         }
 
-        // YÖNETİCİ PANELİ: İlan Silme (Soft Delete)
+        
         [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteEstate(int id)
@@ -156,7 +156,7 @@ namespace EmlakPortal.API.Controllers
             return Ok(new ResultDto { Status = true, Message = "İlan başarıyla yayından kaldırıldı." });
         }
 
-        // YÖNETİCİ PANELİ: İlan Güncelleme
+     
         [Authorize]
         [HttpPut]
         public async Task<IActionResult> UpdateEstate(EstateUpdateDto model)
@@ -168,7 +168,7 @@ namespace EmlakPortal.API.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var isAdmin = User.IsInRole("Admin");
 
-            // Sadece ilan sahibi veya Admin düzenleyebilir
+      
             if (estate.AppUserId != userId && !isAdmin)
                 return Forbid();
 
@@ -189,7 +189,7 @@ namespace EmlakPortal.API.Controllers
             return Ok(new ResultDto { Status = true, Message = "İlan başarıyla güncellendi." });
         }
 
-        // GENEL ARA YÜZ: Kategoriye Göre İlanları Filtreleme
+        
         [HttpGet("ByCategory/{categoryId}")]
         public async Task<IActionResult> GetEstatesByCategory(int categoryId)
         {
@@ -221,7 +221,7 @@ namespace EmlakPortal.API.Controllers
             return Ok(estates);
         }
 
-        // GENEL ARA YÜZ: Gelişmiş İlan Filtreleme
+      
         [HttpPost("Filter")]
         public async Task<IActionResult> GetEstatesByFilter(EstateFilterDto filter)
         {
@@ -275,7 +275,7 @@ namespace EmlakPortal.API.Controllers
             return Ok(estates);
         }
 
-        // YÖNETİCİ PANELİ: İlana Vitrin Fotoğrafı Yükleme
+       
 
         [HttpPost("{id}/ImageUpload")]
         public async Task<IActionResult> UploadImage(int id, IFormFile file)
@@ -307,7 +307,7 @@ namespace EmlakPortal.API.Controllers
             return Ok(new ResultDto { Status = true, Message = "Vitrin fotoğrafı başarıyla yüklendi.", Data = estate.ImageUrl });
         }
 
-        // YÖNETİCİ PANELİ: İlana ÇOKLU Fotoğraf Yükleme (Galeri)
+       
         [HttpPost("{id}/UploadImages")]
         public async Task<IActionResult> UploadImages(int id, [FromForm] List<IFormFile> files)
         {
@@ -356,8 +356,8 @@ namespace EmlakPortal.API.Controllers
             }
         }
 
-        // YÖNETİCİ PANELİ: Tekil Galeri Fotoğrafı Silme
-        [Authorize] // Admin + kullanıcı (ilan sahibi) silebilir
+
+        [Authorize] 
         [HttpDelete("Image/{imageId}")]
         public async Task<IActionResult> DeleteEstateImage(int imageId)
         {
@@ -371,11 +371,10 @@ namespace EmlakPortal.API.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var isAdmin = User.IsInRole("Admin");
 
-            // Sadece ilan sahibi veya admin silebilir
             if (image.Estate.AppUserId != userId && !isAdmin)
                 return Forbid();
 
-            // Dosyayı diskten sil
+
             var webRootPath = _env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
             var filePath = Path.Combine(webRootPath, image.ImageUrl.TrimStart('/'));
             if (System.IO.File.Exists(filePath))
@@ -396,7 +395,7 @@ namespace EmlakPortal.API.Controllers
                 .Include(e => e.Category)
                 .Include(e => e.AppUser)
                 .Include(e => e.Images)
-                .Where(e => e.AppUserId == userId && e.IsActive) // ← IsActive filtresi eklendi
+                .Where(e => e.AppUserId == userId && e.IsActive) 
                 .OrderByDescending(e => e.CreatedDate)
                 .Select(e => new EstateDto
                 {

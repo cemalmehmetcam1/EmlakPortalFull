@@ -8,7 +8,7 @@ namespace EmlakPortal.API.Models
 
         public ICollection<Favorite>? Favorites { get; set; }
 
-        // Bir kullanıcının (emlakçının) birden fazla ilanı olabilir
+     
         public ICollection<Estate>? Estates { get; set; }
     }
 }

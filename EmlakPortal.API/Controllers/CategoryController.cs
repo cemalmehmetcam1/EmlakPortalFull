@@ -17,13 +17,13 @@ namespace EmlakPortal.API.Controllers
             _categoryRepo = categoryRepo;
         }
 
-        // GENEL KULLANIM: Herkes (Giriş yapmayanlar dahil) kategorileri görebilir
+      
         [HttpGet]
         public async Task<IActionResult> GetCategories()
         {
             var categories = await _categoryRepo.GetAllAsync();
 
-            // Sadece aktif olanları listele (Soft delete mantığı)
+            
             var result = categories.Where(c => c.IsActive).Select(c => new CategoryDto
             {
                 Id = c.Id,
@@ -33,7 +33,7 @@ namespace EmlakPortal.API.Controllers
             return Ok(result);
         }
 
-        // YÖNETİCİ KULLANIMI: Sadece "Admin" yetkisi olanlar kategori ekleyebilir
+      
         [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> AddCategory(CategoryDto model)
@@ -41,7 +41,7 @@ namespace EmlakPortal.API.Controllers
             var category = new Category
             {
                 Name = model.Name,
-                Description = "Sistem tarafından eklendi.", // İstersen bunu da DTO'ya ekleyebilirsin
+                Description = "Sistem tarafından eklendi.", 
                 CreatedDate = DateTime.Now,
                 IsActive = true
             };

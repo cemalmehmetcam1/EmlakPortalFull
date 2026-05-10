@@ -5,7 +5,7 @@
 <div class="container">
     <h3 class="mb-4"><i class="fas fa-heart text-danger me-2"></i>Favori İlanlarım</h3>
     <div id="favoriteList" class="row">
-        <!-- AJAX ile doldurulacak -->
+
     </div>
 </div>
 
@@ -59,7 +59,6 @@
             });
         }
 
-        // Favoriden çıkar
         $(document).on("click", ".btn-remove-fav", function (e) {
             e.preventDefault();
             var id = $(this).data("id");

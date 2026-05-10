@@ -50,11 +50,11 @@
                 }),
                 success: function (res) {
                     if (res.status === true || res.Status === true) {
-                        // Token'ı al
+                     
                         var token = res.data || res.Data;
                         localStorage.setItem("token", token);
 
-                        // Rol bul
+                      
                         var payload = parseJwt(token);
                         var role = payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
 

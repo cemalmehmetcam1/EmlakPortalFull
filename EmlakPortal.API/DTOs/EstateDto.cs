@@ -20,7 +20,7 @@
         public List<string>? ImageUrls { get; set; }
         public List<int>? ImageIds { get; set; }
 
-        // Yeni satıcı bilgileri
+
         public string? SellerFullName { get; set; }
         public string? SellerPhone { get; set; }
         public string? SellerEmail { get; set; }

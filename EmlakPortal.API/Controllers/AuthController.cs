@@ -39,7 +39,7 @@ namespace EmlakPortal.API.Controllers
 
             if (result.Succeeded)
             {
-                // Sistemde "User" ve "Admin" rolleri yoksa oluştur
+                
                 string[] roles = { "Admin", "User" };
                 foreach (var role in roles)
                 {
@@ -49,7 +49,7 @@ namespace EmlakPortal.API.Controllers
                     }
                 }
 
-                // Dışarıdan kaydolan herkes varsayılan olarak "User" (Normal kullanıcı) olur
+                
                 await _userManager.AddToRoleAsync(user, "User");
 
                 return Ok(new ResultDto { Status = true, Message = "Kayıt Başarılı. Hesabınız standart 'User' yetkisiyle oluşturuldu." });
@@ -65,7 +65,7 @@ namespace EmlakPortal.API.Controllers
 
             if (user != null && await _userManager.CheckPasswordAsync(user, model.Password))
             {
-                // Şifre doğruysa Token üret ve ver
+                
                 var token = await _tokenService.GenerateToken(user);
                 return Ok(new ResultDto { Status = true, Message = "Giriş Başarılı", Data = token });
             }
@@ -73,7 +73,7 @@ namespace EmlakPortal.API.Controllers
             return Unauthorized(new ResultDto { Status = false, Message = "Kullanıcı adı veya şifre hatalı!" });
         }
 
-        // SADECE MEVCUT BİR ADMİN BAŞKASINA YETKİ VEREBİLİR
+       
         [Authorize(Roles = "Admin")]
         [HttpPost("MakeAdmin")]
         public async Task<IActionResult> MakeAdmin(string userName)
@@ -82,13 +82,13 @@ namespace EmlakPortal.API.Controllers
             if (user == null)
                 return NotFound(new ResultDto { Status = false, Message = "Kullanıcı bulunamadı." });
 
-            // Kullanıcıya Admin rolünü ekle
+
             await _userManager.AddToRoleAsync(user, "Admin");
 
             return Ok(new ResultDto { Status = true, Message = $"{userName} artık bir emlak yöneticisi (Admin)!" });
         }
 
-        // SADECE MEVCUT BİR ADMİN BAŞKASININ YETKİSİNİ GERİ ALABİLİR
+
         [Authorize(Roles = "Admin")]
         [HttpPost("RevokeAdmin")]
         public async Task<IActionResult> RevokeAdmin(string userName)
@@ -97,12 +97,10 @@ namespace EmlakPortal.API.Controllers
             if (user == null)
                 return NotFound(new ResultDto { Status = false, Message = "Kullanıcı bulunamadı." });
 
-            // Kullanıcının Admin olup olmadığını kontrol et
             var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
             if (!isAdmin)
                 return BadRequest(new ResultDto { Status = false, Message = "Bu kullanıcı zaten yönetici değil." });
 
-            // Kullanıcıdan Admin rolünü sil
             var result = await _userManager.RemoveFromRoleAsync(user, "Admin");
 
             if (result.Succeeded)
@@ -117,7 +115,7 @@ namespace EmlakPortal.API.Controllers
         public async Task<IActionResult> GetUsers()
         {
             var users = await _userManager.Users
-                .Include(u => u.Estates)   // Kullanıcının ilanları yükleniyor
+                .Include(u => u.Estates)   
                 .ToListAsync();
 
             var userList = new List<object>();
@@ -131,7 +129,7 @@ namespace EmlakPortal.API.Controllers
                     u.FullName,
                     u.Email,
                     Roles = roles,
-                    EstateCount = u.Estates?.Count ?? 0   // İlan sayısı
+                    EstateCount = u.Estates?.Count ?? 0   
                 });
             }
             return Ok(userList);
@@ -144,10 +142,10 @@ namespace EmlakPortal.API.Controllers
                 return Ok(new ResultDto { Status = true, Message = "Eğer sistemde kayıtlıysa, şifre sıfırlama bağlantısı e-posta adresinize gönderilmiştir." });
 
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-            // Demo: token döndürülüyor
+           
             return Ok(new ResultDto { Status = true, Message = "Şifre sıfırlama bağlantısı gönderildi. (Token: " + token + ")" });
         }
-        // KULLANICI PROFİLİNİ GETİR
+    
         [Authorize]
         [HttpGet("GetProfile")]
         public async Task<IActionResult> GetProfile()
@@ -170,7 +168,7 @@ namespace EmlakPortal.API.Controllers
             return Ok(new ResultDto { Status = true, Data = profile });
         }
 
-        // KULLANICI PROFİLİNİ GÜNCELLE
+      
         [Authorize]
         [HttpPut("UpdateProfile")]
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto model)
@@ -184,7 +182,6 @@ namespace EmlakPortal.API.Controllers
             user.Email = model.Email;
             user.PhoneNumber = model.PhoneNumber;
 
-            // Şifre güncelleme (opsiyonel)
             if (!string.IsNullOrEmpty(model.CurrentPassword) && !string.IsNullOrEmpty(model.NewPassword))
             {
                 var passwordCheck = await _userManager.CheckPasswordAsync(user, model.CurrentPassword);

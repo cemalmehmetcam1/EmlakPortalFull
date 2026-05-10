@@ -1,19 +1,19 @@
 using EmlakPortal.API.Data;
 using EmlakPortal.API.Models;
 using EmlakPortal.API.Repositories;
-using EmlakPortal.API.Services; // Token servisi için
+using EmlakPortal.API.Services; 
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer; // JWT için
-using Microsoft.IdentityModel.Tokens; // JWT için
-using System.Text; // Encoding için
-using Microsoft.OpenApi.Models; // Swagger için
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens; 
+using System.Text;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+
 builder.Services.AddControllers();
-// --- CORS AYARLARI (MVC AJAX Ýsteklerine Ýzin Verme) ---
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
@@ -26,7 +26,7 @@ builder.Services.AddCors(options =>
 });
 builder.Services.AddEndpointsApiExplorer();
 
-// --- 1. SWAGGER VE JWT KÝLÝT AYARLARI ---
+
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "Emlak Portal API", Version = "v1" });
@@ -53,11 +53,11 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// --- 2. VERÝ TABANI BAÐLANTISI ---
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// --- 3. IDENTITY (ÜYELÝK) SÝSTEMÝ ---
+
 builder.Services.AddIdentity<AppUser, AppRole>(options =>
 {
     options.Password.RequireNonAlphanumeric = false;
@@ -68,11 +68,11 @@ builder.Services.AddIdentity<AppUser, AppRole>(options =>
 .AddEntityFrameworkStores<AppDbContext>()
 .AddDefaultTokenProviders();
 
-// --- 4. REPOSITORY VE SERVÝS KAYITLARI ---
-builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
-builder.Services.AddScoped<ITokenService, TokenService>(); // Token üreten servisi tanýttýk
 
-// --- 5. JWT KÝMLÝK DOÐRULAMA AYARLARI ---
+builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+builder.Services.AddScoped<ITokenService, TokenService>(); 
+
+
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]!);
 
@@ -98,23 +98,23 @@ builder.Services.AddAuthentication(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseStaticFiles(); // EKLENECEK SATIR: wwwroot klasörünü dýþarý açar
-app.UseHttpsRedirection(); // Bu zaten var
+app.UseStaticFiles(); 
+app.UseHttpsRedirection(); 
 
-// DÝKKAT: Sýralama çok önemli! Önce Kimlik Doðrulama, sonra Yetki Kontrolü
+
 app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-// --- DATA SEEDING (SÝSTEM ÝLK AYAÐA KALKARKEN ÇALIÞACAK KODLAR) ---
+
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -123,7 +123,7 @@ using (var scope = app.Services.CreateScope())
         var userManager = services.GetRequiredService<UserManager<AppUser>>();
         var roleManager = services.GetRequiredService<RoleManager<AppRole>>();
 
-        // 1. Sistemdeki temel rolleri oluþtur
+
         string[] roleNames = { "Admin", "User" };
         foreach (var roleName in roleNames)
         {
@@ -133,7 +133,7 @@ using (var scope = app.Services.CreateScope())
             }
         }
 
-        // 2. Eðer veritabanýnda hiç Admin yoksa, ilk kurucu hesabý otomatik oluþtur
+
         string adminEmail = "admin@emlakportal.com";
         var adminUser = await userManager.FindByEmailAsync(adminEmail);
 
@@ -141,13 +141,13 @@ using (var scope = app.Services.CreateScope())
         {
             adminUser = new AppUser
             {
-                UserName = "admin", // Kullanýcý adýmýz: admin
+                UserName = "admin", 
                 Email = adminEmail,
                 FullName = "Sistem Yöneticisi",
                 EmailConfirmed = true
             };
 
-            // Þifreyi Admin123! olarak belirliyoruz
+  
             await userManager.CreateAsync(adminUser, "Admin123!");
             await userManager.AddToRoleAsync(adminUser, "Admin");
         }

@@ -2,10 +2,10 @@
 {
     public class Category : BaseEntity
     {
-        public string Name { get; set; } = string.Empty; // Örn: Konut, İşyeri, Arsa
+        public string Name { get; set; } = string.Empty; 
         public string Description { get; set; } = string.Empty;
 
-        // Bu kategoriye ait emlak ilanları
+
         public ICollection<Estate>? Estates { get; set; }
     }
 }

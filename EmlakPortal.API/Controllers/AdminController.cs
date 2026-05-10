@@ -1,7 +1,7 @@
 ﻿using EmlakPortal.API.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;  // ← BU EKLENMELİ
+using Microsoft.EntityFrameworkCore; 
 
 namespace EmlakPortal.API.Controllers
 {
@@ -22,21 +22,21 @@ namespace EmlakPortal.API.Controllers
             var totalUsers = await _context.Users.CountAsync();
             var totalCategories = await _context.Categories.CountAsync();
 
-            // Son 5 ilan
+            
             var latestEstates = await _context.Estates
                 .OrderByDescending(e => e.CreatedDate)
                 .Take(5)
                 .Select(e => new { e.Title, e.City, e.Price, e.CreatedDate })
                 .ToListAsync();
 
-            // Şehir dağılımı
+            
             var cityStats = await _context.Estates
                 .GroupBy(e => e.City)
                 .Select(g => new { City = g.Key, Count = g.Count() })
                 .OrderByDescending(x => x.Count)
                 .ToListAsync();
 
-            // Kategori dağılımı
+            
             var categoryStats = await _context.Estates
                 .Include(e => e.Category)
                 .GroupBy(e => e.Category.Name)

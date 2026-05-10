@@ -9,7 +9,7 @@
         void Delete(T entity);
         Task<int> SaveAsync();
 
-        // Gelişmiş sorgular (Include, Where vs.) için query yeteneği
+
         IQueryable<T> AsQueryable();
     }
 }

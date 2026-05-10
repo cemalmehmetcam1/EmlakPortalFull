@@ -51,19 +51,19 @@
                 return;
             }
 
-            // Tek API çağrısı ile tüm dashboard verisini al
+          
             $.ajax({
                 url: "https://localhost:7279/api/Admin/Dashboard",
                 type: "GET",
                 headers: { "Authorization": "Bearer " + token },
                 success: function(data) {
-                    // Üst kartları doldur
+                  
                     $("#totalEstates").text(data.totalEstates);
                     $("#activeEstates").text(data.activeEstates);
                     $("#totalUsers").text(data.totalUsers);
                     $("#totalCategories").text(data.totalCategories);
 
-                    // Son eklenen ilanlar tablosu
+                   
                     var latestHtml = "";
                     if (data.latestEstates && data.latestEstates.length > 0) {
                         $.each(data.latestEstates, function(i, item) {
@@ -78,7 +78,7 @@
                     }
                     $("#tblLatest tbody").html(latestHtml);
 
-                    // Şehir dağılımı tablosu
+         
                     var cityHtml = "";
                     if (data.cityStats && data.cityStats.length > 0) {
                         $.each(data.cityStats, function(i, item) {

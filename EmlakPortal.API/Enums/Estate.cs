@@ -4,25 +4,25 @@ namespace EmlakPortal.API.Models
 {
     public class Estate : BaseEntity
     {
-        public string Title { get; set; } = string.Empty; // İlan Başlığı
-        public string Description { get; set; } = string.Empty; // İlan Detayı
-        public decimal Price { get; set; } // Fiyat
-        public int RoomCount { get; set; } // Oda Sayısı (Örn: 3+1 yerine şimdilik 3 veya 4 gibi tutulabilir)
-        public int SquareMeters { get; set; } // Metrekare
-        public string City { get; set; } = string.Empty; // Şehir
-        public string Address { get; set; } = string.Empty; // Açık Adres
+        public string Title { get; set; } = string.Empty; 
+        public string Description { get; set; } = string.Empty; 
+        public decimal Price { get; set; } 
+        public int RoomCount { get; set; } 
+        public int SquareMeters { get; set; } 
+        public string City { get; set; } = string.Empty; 
+        public string Address { get; set; } = string.Empty; 
 
-        public EstateStatus Status { get; set; } // Satılık mı, Kiralık mı?
+        public EstateStatus Status { get; set; } 
 
-        // İlişkiler
+        
         public int CategoryId { get; set; }
         public Category? Category { get; set; }
 
-        public string AppUserId { get; set; } = string.Empty; // İlanı ekleyen kullanıcı (Admin/Emlakçı)
+        public string AppUserId { get; set; } = string.Empty; 
         public AppUser? AppUser { get; set; }
 
         public ICollection<EstateImage> Images { get; set; } = new List<EstateImage>();
 
-        public string? ImageUrl { get; set; } // Vitrin fotoğrafının yolu
+        public string? ImageUrl { get; set; } 
     }
 }

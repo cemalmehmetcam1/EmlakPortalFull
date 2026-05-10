@@ -52,7 +52,7 @@
 
         function getHeaders() { return { "Authorization": "Bearer " + token }; }
 
-        // Profil bilgilerini getir
+
         $.ajax({
             url: "https://localhost:7279/api/Auth/GetProfile",
             type: "GET",
@@ -75,7 +75,7 @@
             }
         });
 
-        // Güncelle
+
         $("#btnUpdateProfile").click(function() {
             var payload = {
                 FullName: $("#txtFullName").val(),

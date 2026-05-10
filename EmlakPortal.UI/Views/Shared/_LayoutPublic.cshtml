@@ -44,7 +44,6 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <div class="navbar-nav ms-auto" id="navAuthLinks">
-                    <!-- Misafir kullanıcı için varsayılan linkler (JavaScript ile değişecek) -->
                     <a class="nav-link" href="/Home/Index"><i class="fas fa-search me-1"></i>İlan Ara</a>
                     <a class="nav-link" href="/Auth/Login"><i class="fas fa-sign-in-alt me-1"></i>Giriş</a>
                     <a class="nav-link" href="/Auth/Register"><i class="fas fa-user-plus me-1"></i>Kayıt</a>
@@ -55,8 +54,6 @@
     <div class="container mt-4">
         @RenderBody()
     </div>
-
-    <!-- Ortak Modal: İlan Ekleme / Düzenleme (Kullanıcı) -->
     <div class="modal fade" id="publicEstateModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -76,7 +73,6 @@
                             <select id="cmbPublicCity" class="form-control">
                                 <option value="">Seçiniz</option>
                                 <option value="Adana">Adana</option>
-                                <!-- diğer şehir seçenekleri aynen -->
                             </select>
                         </div>
                         <div class="col-md-6 mb-2"><label>Adres</label><input id="txtPublicAddress" class="form-control" /></div>
@@ -118,8 +114,6 @@
                 return null;
             }
         }
-
-        // Yardımcı fonksiyonlar (tüm sayfalarda kullanılabilir)
         function getHeaders() {
             var token = localStorage.getItem("token");
             return token ? { "Authorization": "Bearer " + token } : {};
@@ -166,18 +160,14 @@
                         if (isAdmin) {
                             linksHtml += '<a class="nav-link" href="/Admin/Dashboard"><i class="fas fa-tachometer-alt me-1"></i>Yönetim</a>';
                         }
-                        // Kullanıcıya özel linkler
                         linksHtml += '<a class="nav-link" href="/Home/Favorites"><i class="fas fa-heart me-1"></i>Favorilerim</a>';
                         linksHtml += '<a class="nav-link" href="/Home/MyEstates"><i class="fas fa-list me-1"></i>İlanlarım</a>';
                         linksHtml += '<a class="nav-link" href="/Home/Profile"><i class="fas fa-user me-1"></i>Profil</a>';
-                        // İlan Ver butonu (isteğe bağlı, daha önce eklenmişti, burada kalabilir)
                         linksHtml += '<a class="nav-link" href="#" id="btnAddEstatePublic"><i class="fas fa-plus-circle me-1"></i>İlan Ver</a>';
                         linksHtml += '<span class="nav-link text-white">Merhaba, ' + userName + '</span>';
                         linksHtml += '<a class="nav-link" href="#" id="btnPublicLogout"><i class="fas fa-sign-out-alt me-1"></i>Çıkış</a>';
 
                         linksContainer.html(linksHtml);
-
-                        // İlan Ver butonuna tıklama (modalı açar)
                         $(document).on("click", "#btnAddEstatePublic", function (e) {
                             e.preventDefault();
                             resetPublicForm();
@@ -185,7 +175,6 @@
                             $("#publicEstateModal").modal("show");
                         });
 
-                        // Çıkış butonu
                         $(document).on("click", "#btnPublicLogout", function (e) {
                             e.preventDefault();
                             localStorage.removeItem("token");
@@ -194,9 +183,6 @@
                     }
                 } catch (e) { }
             }
-            // Token yoksa varsayılan misafir linkleri kalır.
-
-            // Vitrin fotoğrafı önizleme (layout'ta olduğu için tüm sayfalarda çalışır)
             $(document).on("change", "#filePublicImage", function () {
                 var file = this.files[0];
                 if (file) {
@@ -208,7 +194,6 @@
                 }
             });
 
-            // Galeri fotoğrafları önizleme
             $(document).on("change", "#filePublicImages", function () {
                 var files = this.files;
                 $("#galleryPublicPreview").empty();
@@ -221,7 +206,6 @@
                 }
             });
 
-            // Kaydet butonu (ekleme / güncelleme)
             $(document).on("click", "#btnSavePublic", function () {
                 var id = parseInt($("#hdnPublicEstateId").val());
                 var isNew = id === 0;
@@ -254,12 +238,11 @@
                             $("#publicEstateModal").modal("hide");
                             resetPublicForm();
 
-                            // Sayfayı akıllıca yenile
                             var path = window.location.pathname.toLowerCase();
                             if (path.includes("myestates")) {
                                 location.reload();
                             } else if (path.includes("index") || path === "/" || path === "/home/index") {
-                                // Eğer ana sayfada loadEstates fonksiyonu varsa çağır, yoksa reload
+
                                 if (typeof loadEstates === "function") {
                                     loadEstates();
                                 } else {
@@ -278,7 +261,6 @@
                 });
             });
         });
-                // Galeri fotoğrafı silme (düzenleme modunda)
         $(document).on("click", ".btn-delete-gallery-image", function(e){
             e.preventDefault();
             var imageId = $(this).data("imageid");

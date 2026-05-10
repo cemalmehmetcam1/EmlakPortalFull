@@ -10,7 +10,7 @@
         public int SquareMeters { get; set; }
         public string City { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
-        public int Status { get; set; } // 1: Satılık, 2: Kiralık
+        public int Status { get; set; } 
         public int CategoryId { get; set; }
         public bool IsActive { get; set; }
     }

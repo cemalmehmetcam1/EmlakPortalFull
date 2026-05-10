@@ -3,7 +3,7 @@
     ViewData["Title"] = "Emlak İlanları";
 }
 <div class="container">
-    <!-- İlan Ver Butonu (sadece giriş yapmış kullanıcılar görür) -->
+
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h3 class="mb-0">Güncel İlanlar</h3>
         <button class="btn btn-success" id="btnAddEstatePublic" style="display:none;">
@@ -11,7 +11,7 @@
         </button>
     </div>
 
-    <!-- Filtreler -->
+
     <div class="row mb-4">
         <div class="col-md-3"><input id="txtCity" class="form-control" placeholder="Şehir" /></div>
         <div class="col-md-2"><input id="txtMinPrice" class="form-control" placeholder="Min Fiyat" type="number" /></div>
@@ -24,7 +24,7 @@
     <div id="estateList" class="row"></div>
 </div>
 
-<!-- Modal: Halka Açık İlan Ekleme (Kullanıcı) -->
+
 <div class="modal fade" id="publicEstateModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -44,7 +44,7 @@
                         <select id="cmbPublicCity" class="form-control">
                             <option value="">Seçiniz</option>
                             <option value="Adana">Adana</option>
-                            <!-- tüm şehirler aynı şekilde -->
+
                         </select>
                     </div>
                     <div class="col-md-6 mb-2"><label>Adres</label><input id="txtPublicAddress" class="form-control" /></div>
@@ -128,7 +128,7 @@
             }});
         }
 
-        // Favori işlemleri
+
         function updateFavButtons() {
             if (!token) return;
             $.ajax({
@@ -162,7 +162,7 @@
             });
         });
 
-        // Kullanıcı ilan ekleme modalı
+
         $("#btnAddEstatePublic").click(function(){
             $("#publicEstateModal").modal("show");
         });
@@ -190,7 +190,7 @@
                 success: function(res) {
                     if (res.status) {
                         var newId = res.data;
-                        // Fotoğraf yükleme işlemleri aynı mantıkla...
+
                         alert("İlan başarıyla eklendi.");
                         $("#publicEstateModal").modal("hide");
                         loadEstates();
@@ -216,7 +216,7 @@
                 loadEstates(filter);
             });
 
-            // Vitrin fotoğrafı önizleme
+
             $("#filePublicImage").change(function(){
                 var file = this.files[0];
                 if (file) {
