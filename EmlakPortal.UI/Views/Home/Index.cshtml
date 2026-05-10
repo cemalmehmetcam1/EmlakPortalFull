@@ -27,18 +27,24 @@
                     var html = "";
                     if (data.length === 0) html = '<div class="col-12 text-center">İlan bulunamadı.</div>';
                     $.each(data, function (i, item) {
-                        html += `<div class="col-md-4 mb-4">
-                            <div class="card h-100">
-                                <img src="${item.imageUrl ? 'https://localhost:7279' + item.imageUrl : 'https://localhost:7279/images/default.jpg'}" class="card-img-top" style="height:200px; object-fit:cover" />
-                                <div class="card-body">
-                                    <h5 class="card-title">${item.title}</h5>
-                                    <p>${item.price.toLocaleString('tr-TR')} TL</p>
-                                    <p>${item.roomCount} Oda - ${item.squareMeters} m²</p>
-                                    <p>${item.statusName}</p>
-                                    <a href="/Home/Detail/${item.id}" class="btn btn-primary">Detay</a>
-                                </div>
-                            </div>
-                        </div>`;
+                     html += `<div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div style="position: relative;">
+                            <img src="${item.imageUrl ? 'https://localhost:7279' + item.imageUrl : 'https://localhost:7279/images/default.jpg'}" class="card-img-top" style="height:200px; object-fit:cover" />`;
+                // Eğer galeri varsa sayı etiketi göster
+                if (item.imageUrls && item.imageUrls.length > 1) {
+                    html += `<span class="badge bg-dark position-absolute bottom-0 end-0 m-2">${item.imageUrls.length} fotoğraf</span>`;
+                }
+                html += `</div>
+                        <div class="card-body">
+                            <h5 class="card-title">${item.title}</h5>
+                            <p>${item.price.toLocaleString('tr-TR')} TL</p>
+                            <p>${item.roomCount} Oda - ${item.squareMeters} m²</p>
+                            <p>${item.statusName}</p>
+                            <a href="/Home/Detail/${item.id}" class="btn btn-primary">Detay</a>
+                        </div>
+                    </div>
+                </div>`;
                     });
                     $("#estateList").html(html);
                 }

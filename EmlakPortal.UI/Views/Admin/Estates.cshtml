@@ -122,12 +122,18 @@
                     <div class="col-md-12 mb-2"><label>Açıklama</label><textarea id="txtDescription" class="form-control" rows="2"></textarea></div>
                     <div class="col-md-6 mb-2"><label>Aktif</label><select id="cmbIsActive" class="form-control"><option value="true">Evet</option><option value="false">Hayır</option></select></div>
                     <div class="col-md-6 mb-2">
-                        <label>Fotoğraf</label>
+                        <label>Vitrin Fotoğrafı</label>
                         <input type="file" id="fileImage" class="form-control" accept="image/*" />
                         <input type="hidden" id="hdnImageUrl" />
                         <div class="mt-2">
                             <img id="imgPreview" src="" style="max-height:100px; display:none;" class="rounded shadow-sm" />
                         </div>
+                    </div>
+                    <!-- Galeri Fotoğrafları -->
+                    <div class="col-md-12 mb-2">
+                        <label>Galeri Fotoğrafları (isteğe bağlı, birden fazla seçin)</label>
+                        <input type="file" id="fileImages" class="form-control" accept="image/*" multiple />
+                        <div class="mt-2" id="galleryPreview" style="display:flex; flex-wrap:wrap; gap:5px;"></div>
                     </div>
                 </div>
             </div>
@@ -178,7 +184,7 @@
             loadEstates();
             loadCategories();
 
-            // Fotoğraf önizleme
+            // Vitrin fotoğrafı önizleme
             $("#fileImage").change(function(){
                 var file = this.files[0];
                 if (file) {
@@ -192,17 +198,31 @@
                 }
             });
 
+            // Galeri fotoğrafları önizleme
+            $("#fileImages").change(function(){
+                var files = this.files;
+                $("#galleryPreview").empty();
+                for (var i = 0; i < files.length; i++) {
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        $("#galleryPreview").append('<img src="' + e.target.result + '" style="height:60px; margin:2px;" class="rounded shadow-sm" />');
+                    };
+                    reader.readAsDataURL(files[i]);
+                }
+            });
+
             $("#btnAddNew").click(function(){
                 $("#modalTitle").text("Yeni İlan Ekle");
                 $("#hdnEstateId").val("0");
-                // Temizlik: cmbCity dahil
                 $("#txtTitle, #txtPrice, #txtRoomCount, #txtSquareMeters, #txtAddress, #txtDescription").val("");
-                $("#cmbCity").val("");   // şehir dropdown sıfırla
+                $("#cmbCity").val("");
                 $("#cmbStatus").val("1");
                 $("#cmbIsActive").val("true");
                 $("#fileImage").val("");
                 $("#hdnImageUrl").val("");
                 $("#imgPreview").hide();
+                $("#fileImages").val("");
+                $("#galleryPreview").empty();
                 $("#estateModal").modal("show");
             });
 
@@ -218,7 +238,7 @@
                     Price: parseFloat($("#txtPrice").val()),
                     RoomCount: parseInt($("#txtRoomCount").val()),
                     SquareMeters: parseInt($("#txtSquareMeters").val()),
-                    City: $("#cmbCity").val(),    // düzeltildi
+                    City: $("#cmbCity").val(),
                     Address: $("#txtAddress").val(),
                     Status: parseInt($("#cmbStatus").val()),
                     CategoryId: parseInt($("#cmbCategory").val()),
@@ -233,9 +253,9 @@
                     data: JSON.stringify(payload),
                     success: function(res) {
                         if (res.status || res.Status) {
-                            // Kaydetme başarılı olunca, eğer dosya seçiliyse resmi yükle
                             if (res.id || res.data) {
                                 var newId = res.data || res.id || id;
+                                // Vitrin fotoğrafı yükle
                                 if ($("#fileImage")[0].files[0]) {
                                     var formData = new FormData();
                                     formData.append("file", $("#fileImage")[0].files[0]);
@@ -251,6 +271,25 @@
                                     });
                                 } else {
                                     loadEstates();
+                                }
+
+                                // Galeri fotoğraflarını yükle
+                                if ($("#fileImages")[0].files.length > 0) {
+                                    var galleryFormData = new FormData();
+                                    var files = $("#fileImages")[0].files;
+                                    for (var i = 0; i < files.length; i++) {
+                                        galleryFormData.append("files", files[i]);
+                                    }
+                                    $.ajax({
+                                        url: "https://localhost:7279/api/Estate/" + newId + "/UploadImages",
+                                        type: "POST",
+                                        headers: getHeaders(),
+                                        processData: false,
+                                        contentType: false,
+                                        data: galleryFormData,
+                                        success: function () { loadEstates(); },
+                                        error: function () { loadEstates(); }
+                                    });
                                 }
                             } else {
                                 loadEstates();
@@ -277,18 +316,24 @@
                         $("#txtPrice").val(item.price);
                         $("#txtRoomCount").val(item.roomCount);
                         $("#txtSquareMeters").val(item.squareMeters);
-                        $("#cmbCity").val(item.city);   // düzeltildi
+                        $("#cmbCity").val(item.city);
                         $("#txtAddress").val(item.address);
                         $("#cmbStatus").val(item.statusName === "Satılık" ? "1" : "2");
                         $("#cmbCategory").val(item.categoryId);
                         $("#txtDescription").val(item.description || "");
                         $("#cmbIsActive").val(item.isActive ? "true" : "false");
                         $("#hdnImageUrl").val(item.imageUrl || "");
-                        // Önizleme resmini göster (varsa)
                         if (item.imageUrl) {
                             $("#imgPreview").attr("src", "https://localhost:7279" + item.imageUrl).show();
                         } else {
                             $("#imgPreview").hide();
+                        }
+                        // Galeri önizlemesi (varsa)
+                        $("#galleryPreview").empty();
+                        if (item.imageUrls && item.imageUrls.length > 0) {
+                            $.each(item.imageUrls, function(i, url){
+                                $("#galleryPreview").append('<img src="https://localhost:7279' + url + '" style="height:60px; margin:2px;" class="rounded shadow-sm" />');
+                            });
                         }
                         $("#modalTitle").text("İlan Düzenle");
                         $("#estateModal").modal("show");

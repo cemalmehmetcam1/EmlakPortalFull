@@ -15,9 +15,39 @@
             $.ajax({
                 url: "https://localhost:7279/api/Estate/" + id,
                 success: function(item) {
-                    var html = `
-                        <div class="card shadow rounded-4">
-                           <img src="${item.imageUrl ? 'https://localhost:7279' + item.imageUrl : 'https://localhost:7279/images/default.jpg'}" class="card-img-top" style="max-height:400px;object-fit:cover;" />
+                    var html = `<div class="card shadow rounded-4">`;
+
+                    // Galeri varsa carousel, yoksa tek resim
+                    if (item.imageUrls && item.imageUrls.length > 0) {
+                        var indicators = '';
+                        var innerItems = '';
+                        $.each(item.imageUrls, function(i, url) {
+                            var active = i === 0 ? 'active' : '';
+                            indicators += `<button type="button" data-bs-target="#carouselDetail" data-bs-slide-to="${i}" class="${active}" aria-label="Slide ${i+1}"></button>`;
+                            innerItems += `
+                                <div class="carousel-item ${active}">
+                                    <img src="https://localhost:7279${url}" class="d-block w-100" style="max-height:400px; object-fit:cover;" />
+                                </div>`;
+                        });
+                        html += `
+                            <div id="carouselDetail" class="carousel slide" data-bs-ride="carousel">
+                                <div class="carousel-indicators">${indicators}</div>
+                                <div class="carousel-inner">${innerItems}</div>
+                                <button class="carousel-control-prev" type="button" data-bs-target="#carouselDetail" data-bs-slide="prev">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Önceki</span>
+                                </button>
+                                <button class="carousel-control-next" type="button" data-bs-target="#carouselDetail" data-bs-slide="next">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Sonraki</span>
+                                </button>
+                            </div>`;
+                    } else {
+                        // Vitrin fotoğrafı veya varsayılan
+                        html += `<img src="${item.imageUrl ? 'https://localhost:7279' + item.imageUrl : 'https://localhost:7279/images/default.jpg'}" class="card-img-top" style="max-height:400px;object-fit:cover;" />`;
+                    }
+
+                    html += `
                             <div class="card-body">
                                 <h2>${item.title}</h2>
                                 <p>${item.description || ''}</p>
